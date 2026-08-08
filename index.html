@@ -1,1 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+  <div class="music-box">
+    <button class="play-button" id="playButton">▶</button>
+
+    <div class="music-info">
+      <span>My Music</span>
+      <small>Now playing</small>
+    </div>
+
+    <audio id="audio" src="music.mp3"></audio>
+  </div>
+
+  <script>
+    const button = document.getElementById("playButton");
+    const audio = document.getElementById("audio");
+
+    button.addEventListener("click", () => {
+      if (audio.paused) {
+        audio.play();
+        button.textContent = "❚❚";
+      } else {
+        audio.pause();
+        button.textContent = "▶";
+      }
+    });
+  </script>
+
+</body>
+</html>
