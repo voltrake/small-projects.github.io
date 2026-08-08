@@ -3,233 +3,133 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Interactive 3D Tube</title>
+  <title>Simple 3D Tube</title>
   <style>
-    :root{
-      --tube-size: min(86vw, 420px);
-      --segments: 18;
-      --ring: 10;          /* number of vertical slices */
-      --radius: 160px;    /* auto-set in JS */
-      --faceW: 18px;      /* width of each slice */
-      --tubeH: 320px;     /* tube height */
-    }
-
     body{
-      margin:0;
-      height:100vh;
-      display:grid;
-      place-items:center;
-      background:
-        radial-gradient(circle at 25% 20%, #223a7a, transparent 55%),
-        radial-gradient(circle at 75% 70%, #4a1f6f, transparent 55%),
-        #070912;
+      margin:0; min-height:100vh;
+      display:grid; place-items:center;
+      background: radial-gradient(circle at 30% 20%, #223a7a, #070912 60%);
       color:#eaf2ff;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
       overflow:hidden;
       user-select:none;
-      touch-action:none;
     }
 
     .stage{
-      width: var(--tube-size);
-      aspect-ratio: 1 / 1;
-      perspective: 900px;
+      width:min(90vw,420px);
+      aspect-ratio: 1/1;
+      perspective: 800px;
       display:grid;
       place-items:center;
-    }
-
-    .tube-wrap{
-      width:100%;
-      height:100%;
-      display:grid;
-      place-items:center;
-      position:relative;
     }
 
     .tube{
       position:relative;
       width: 320px;
-      height: var(--tubeH);
+      height: 320px;
       transform-style: preserve-3d;
-      filter: drop-shadow(0 18px 28px rgba(0,0,0,.55));
-      transform: translateZ(0);
+      filter: drop-shadow(0 18px 25px rgba(0,0,0,.55));
       cursor: grab;
+      touch-action:none;
     }
-
     .tube:active{ cursor: grabbing; }
 
     .slice{
       position:absolute;
-      top:50%;
-      left:50%;
-      width: var(--faceW);
-      height: var(--tubeH);
+      top:50%; left:50%;
+      width: 18px;
+      height: 320px;
       transform-style: preserve-3d;
-      transform-origin: center center;
       border-radius: 10px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.03)),
-        radial-gradient(circle at 30% 10%, rgba(120,210,255,.25), rgba(120,210,255,0) 55%),
-        rgba(20,25,60,.55);
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04));
       border: 1px solid rgba(160,190,255,.18);
-      backdrop-filter: blur(2px);
-      overflow:hidden;
-    }
-
-    /* inner shading */
-    .slice::before{
-      content:"";
-      position:absolute;
-      inset:-30%;
-      background: conic-gradient(from 180deg,
-        rgba(90,200,255,0) 0deg,
-        rgba(90,200,255,.25) 90deg,
-        rgba(180,90,255,.2) 170deg,
-        rgba(90,200,255,0) 260deg
-      );
-      opacity:.55;
-      transform: rotate(0deg);
-      animation: glow 2.8s ease-in-out infinite;
-    }
-
-    @keyframes glow{
-      0%,100% { transform: rotate(0deg); opacity:.45; }
-      50%     { transform: rotate(28deg); opacity:.7; }
-    }
-
-    /* subtle floor */
-    .floor{
-      position:absolute;
-      width: 70%;
-      height: 18%;
-      background: radial-gradient(closest-side, rgba(120,210,255,.22), rgba(120,210,255,0));
-      transform: translateY(190px) rotateX(70deg);
-      filter: blur(2px);
-      opacity:.7;
-    }
-
-    .hint{
-      position:absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
-      letter-spacing:.08em;
-      text-transform: uppercase;
-      color: rgba(220,235,255,.75);
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(160,190,255,.16);
-      background: rgba(10,15,35,.25);
-      backdrop-filter: blur(6px);
+      box-shadow: inset 0 0 18px rgba(90,200,255,.15);
+      opacity:.95;
     }
   </style>
 </head>
 <body>
   <div class="stage">
-    <div class="tube-wrap">
-      <div class="hint">Drag to rotate</div>
-      <div class="floor"></div>
-      <div class="tube" id="tube" aria-label="3D tube you can rotate"></div>
-    </div>
+    <div class="tube" id="tube" aria-label="Simple 3D tube"></div>
   </div>
 
   <script>
     const tube = document.getElementById('tube');
-    const styles = getComputedStyle(document.documentElement);
 
-    const segments = parseInt(styles.getPropertyValue('--segments'), 10) || 18;
-    const faceW = parseFloat(styles.getPropertyValue('--faceW')) || 18;
-    const tubeH = parseFloat(styles.getPropertyValue('--tubeH')) || 320;
+    const segments = 16;
+    const sliceW = 18;     // must match CSS .slice width
+    const tubeH = 320;     // must match CSS .slice height
 
-    // We size radius so slices meet around the tube:
-    // radius = halfFaceWidth / tan(pi/segments)
-    const radius = faceW / (2 * Math.tan(Math.PI / segments));
-    document.documentElement.style.setProperty('--radius', radius.toFixed(2) + 'px');
+    // radius so slices wrap around
+    const radius = sliceW / (2 * Math.tan(Math.PI / segments));
 
-    // Build slices around Y axis
-    const slices = [];
+    // Build tube slices
     for (let i = 0; i < segments; i++){
       const slice = document.createElement('div');
       slice.className = 'slice';
-      tube.appendChild(slice);
-
       const angle = (360 / segments) * i;
-      // Place slice: rotate around Y then push outward.
       slice.style.transform =
         `translate(-50%, -50%) rotateY(${angle}deg) translateZ(${radius}px)`;
-
-      slices.push(slice);
+      tube.appendChild(slice);
     }
 
-    // Interaction: click-drag to rotate "willingly"
+    // Rotate: drag to rotate "willingly"
     let isDown = false;
     let lastX = 0, lastY = 0;
 
-    let rotX = -12;   // tilt
-    let rotY = 18;    // spin
+    let rotX = -10;
+    let rotY = 20;
     let targetRotX = rotX;
     let targetRotY = rotY;
 
-    function applyRotation(){
-      rotX = Math.max(-75, Math.min(75, targetRotX));
+    function apply(){
+      rotX = Math.max(-80, Math.min(80, targetRotX));
       rotY = targetRotY;
       tube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     }
 
-    applyRotation();
+    apply();
 
-    // Drag handlers (mouse + touch)
-    function pointerDown(clientX, clientY){
+    function down(x, y){
       isDown = true;
-      lastX = clientX; lastY = clientY;
-      tube.setPointerCapture?.();
+      lastX = x; lastY = y;
     }
 
-    function pointerMove(clientX, clientY){
-      if (!isDown) return;
-      const dx = clientX - lastX;
-      const dy = clientY - lastY;
-
-      // Sensitivity
-      targetRotY += dx * 0.25;
+    function move(x, y){
+      if(!isDown) return;
+      const dx = x - lastX;
+      const dy = y - lastY;
+      targetRotY += dx * 0.35;
       targetRotX -= dy * 0.25;
-
-      lastX = clientX; lastY = clientY;
+      lastX = x; lastY = y;
     }
 
-    function pointerUp(){
-      isDown = false;
-    }
+    function up(){ isDown = false; }
 
-    tube.addEventListener('mousedown', (e) => {
-      pointerDown(e.clientX, e.clientY);
-    });
-    window.addEventListener('mousemove', (e) => pointerMove(e.clientX, e.clientY));
-    window.addEventListener('mouseup', pointerUp);
+    tube.addEventListener('mousedown', (e)=>down(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e)=>move(e.clientX, e.clientY));
+    window.addEventListener('mouseup', up);
 
-    tube.addEventListener('touchstart', (e) => {
+    tube.addEventListener('touchstart', (e)=>{
       const t = e.touches[0];
-      pointerDown(t.clientX, t.clientY);
-    }, { passive: true });
+      down(t.clientX, t.clientY);
+    }, {passive:true});
 
-    window.addEventListener('touchmove', (e) => {
+    window.addEventListener('touchmove', (e)=>{
       const t = e.touches[0];
-      pointerMove(t.clientX, t.clientY);
-    }, { passive: true });
+      move(t.clientX, t.clientY);
+    }, {passive:true});
 
-    window.addEventListener('touchend', pointerUp);
+    window.addEventListener('touchend', up);
 
-    // Slight auto-rotation when not dragging (optional)
+    // Gentle auto-rotate when not dragging
     let auto = true;
-    window.addEventListener('blur', () => { auto = false; });
-    window.addEventListener('focus', () => { auto = true; });
+    window.addEventListener('blur', ()=> auto = false);
+    window.addEventListener('focus', ()=> auto = true);
 
     function animate(){
-      if (!isDown && auto){
-        targetRotY += 0.25;
-      }
-      applyRotation();
+      if(auto && !isDown) targetRotY += 0.2;
+      apply();
       requestAnimationFrame(animate);
     }
     animate();
