@@ -1,46 +1,53 @@
-<div class="music-box">
-  <button class="play-button" id="playButton">▶</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-  <div class="music-content">
+<body>
+
+  <div class="music-box">
+
+    <button class="play-button" id="playButton">▶</button>
+
     <div class="music-info">
       <span>My Music</span>
       <small>Now playing</small>
+
+      <div class="volume">
+        <span>🔊</span>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
+      </div>
     </div>
 
-    <div class="volume-container">
-      <span class="volume-icon">🔊</span>
-      <input
-        type="range"
-        id="volume"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.7"
-      >
-    </div>
+    <audio id="audio" src="music.mp3"></audio>
+
   </div>
 
-  <audio id="audio" src="music.mp3"></audio>
-</div>
+  <script>
+    const button = document.getElementById("playButton");
+    const audio = document.getElementById("audio");
+    const volume = document.getElementById("volume");
 
-<script>
-  const button = document.getElementById("playButton");
-  const audio = document.getElementById("audio");
-  const volume = document.getElementById("volume");
+    button.addEventListener("click", () => {
+      if (audio.paused) {
+        audio.play();
+        button.textContent = "❚❚";
+      } else {
+        audio.pause();
+        button.textContent = "▶";
+      }
+    });
 
-  button.addEventListener("click", () => {
-    if (audio.paused) {
-      audio.play();
-      button.textContent = "❚❚";
-    } else {
-      audio.pause();
-      button.textContent = "▶";
-    }
-  });
+    volume.addEventListener("input", () => {
+      audio.volume = volume.value;
+    });
 
-  volume.addEventListener("input", () => {
-    audio.volume = volume.value;
-  });
+    audio.volume = 0.7;
+  </script>
 
-  audio.volume = 0.7;
-</script>
+</body>
+</html>
