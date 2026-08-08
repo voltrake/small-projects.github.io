@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>3D Tube with Changing Face Text</title>
+  <style>
+    :root{
+      --tube-w: 340px;
+      --tube-h: 340px;
+      --face-w: 130px;
+      --face-h: 340px;
+      --segments: 10; /* number of faces around tube */
+      --radius: 170px; /* distance from center; auto-tuned in JS */
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(circle at 20% 20%, #1b2a5a, #070a16 60%, #04050c);
+      color:#eaf2ff;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      overflow:hidden;
+    }
+
+    .stage{
+      position:relative;
+      width: min(92vw, var(--tube-w));
+      aspect-ratio: 1 / 1;
+      perspective: 900px;
+      display:grid;
+      place-items:center;
+    }
+
+    .tube{
+      width: 100%;
+      height: 100%;
+      position:relative;
+      transform-style: preserve-3d;
+      animation: spin 10s linear infinite;
+      filter: drop-shadow(0 20px 35px rgba(0,0,0,.55));
+    }
+
+    @keyframes spin{
+      from { transform: rotateY(0deg); }
+      to   { transform: rotateY(360deg); }
+    }
+
+    .face{
+      position:absolute;
+      top:50%;
+      left:50%;
+      width: var(--face-w);
+      height: var(--face-h);
+      transform-style: preserve-3d;
+      transform-origin: 0 0;
+      /* We'll position/rotate in JS; this is just the base look */
+      display:grid;
+      place-items:center;
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+        radial-gradient(circle at 30% 20%, rgba(90,200,255,.22), rgba(0,0,0,0) 55%),
+        rgba(10,15,35,.55);
+      border: 1px solid rgba(160,190,255,.18);
+      backdrop-filter: blur(6px);
+      overflow:hidden;
+    }
+
+    .face::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: conic-gradient(from 180deg, rgba(70,200,255,.0), rgba(70,200,255,.22), rgba(170,70,255,.18), rgba(70,200,255,.0));
+      opacity:.55;
+      animation: shimmer 3.6s ease-in-out infinite;
+    }
+    @keyframes shimmer{
+      0%,100% { transform: rotate(0deg); }
+      50%     { transform: rotate(40deg); }
+    }
+
+    .label{
+      position:relative;
+      z-index:1;
+      text-align:center;
+      padding: 18px 14px;
+      width: 92%;
+    }
+
+    .label .small{
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(210,230,255,.78);
+      text-shadow: 0 0 14px rgba(90,200,255,.25);
+    }
+
+    .label .big{
+      margin-top:10px;
+      font-size: clamp(20px, 2.2vw, 28px);
+      font-weight: 800;
+      line-height: 1.05;
+      color: #f2f7ff;
+      text-shadow:
+        0 0 18px rgba(120,210,255,.28),
+        0 0 30px rgba(165,100,255,.20);
+    }
+
+    .hud{
+      position:absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      pointer-events:none;
+      color: rgba(220,235,255,.75);
+      font-size: 12px;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+    }
+
+    .hint{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(160,190,255,.16);
+      background: rgba(10,15,35,.25);
+      backdrop-filter: blur(6px);
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="tube" id="tube"></div>
+    <div class="hud">
+      <div class="hint">Rotating tube</div>
+      <div class="hint">Changing face text</div>
+    </div>
+  </div>
+
+  <script>
+    const tube = document.getElementById('tube');
+
+    // Content to cycle through
+    const slides = [
+      { small: "NEON",   big: "HELLO" },
+      { small: "LOOP",   big: "WORLD" },
+      { small: "CREATE", big: "WITH CSS 3D" },
+      { small: "MOVE",   big: "ROTATE & SHINE" },
+      { small: "JAM",     big: "TUBE MODE" }
+    ];
+
+    // Build faces around tube
+    const styles = getComputedStyle(document.documentElement);
+    let segments = parseInt(styles.getPropertyValue('--segments'), 10) || 10;
+
+    // Read face dimensions
+    const faceW = parseFloat(styles.getPropertyValue('--face-w')) || 130;
+    const faceH = parseFloat(styles.getPropertyValue('--face-h')) || 340;
+
+    // Compute radius so faces wrap nicely:
+    // radius = faceW / (2 * tan(pi/segments))
+    const radius = faceW / (2 * Math.tan(Math.PI / segments));
+    document.documentElement.style.setProperty('--radius', radius.toFixed(2) + 'px');
+
+    // Add faces
+    const faces = [];
+    tube.innerHTML = "";
+
+    // We'll place faces centered at tube's center by translating and rotating.
+    // Each face is rotated around Y and translated outward by radius.
+    for (let i = 0; i < segments; i++){
+      const face = document.createElement('div');
+      face.className = 'face';
+
+      const label = document.createElement('div');
+      label.className = 'label';
+
+      const small = document.createElement('div');
+      small.className = 'small';
+      small.textContent = slides[0].small;
+
+      const big = document.createElement('div');
+      big.className = 'big';
+      big.textContent = slides[0].big;
+
+      label.appendChild(small);
+      label.appendChild(big);
+      face.appendChild(label);
+
+      // Position in 3D:
+      const angle = (360 / segments) * i;
+      face.style.transform =
+        `translate(-50%, -50%) rotateY(${angle}deg) translateZ(${radius}px)`;
+
+      // Keep references
+      face._smallEl = small;
+      face._bigEl = big;
+
+      tube.appendChild(face);
+      faces.push(face);
+    }
+
+    // Change text on faces as the tube rotates
+    let slideIndex = 0;
+    let tick = 0;
+
+    function updateText(){
+      // Update each face with a slight offset so it feels like scrolling text around the tube
+      for (let i = 0; i < faces.length; i++){
+        const s = slides[(slideIndex + i) % slides.length];
+        faces[i]._smallEl.textContent = s.small;
+        faces[i]._bigEl.textContent = s.big;
+      }
+      slideIndex = (slideIndex + 1) % slides.length;
+    }
+
+    // Update every ~1.2s
+    updateText();
+    const interval = setInterval(updateText, 1200);
+
+    // Optional: pause on hover (nice for demos)
+    tube.addEventListener('mouseenter', () => {
+      tube.style.animationPlayState = 'paused';
+      clearInterval(interval);
+    });
+    tube.addEventListener('mouseleave', () => {
+      // resume with a new interval
+      tube.style.animationPlayState = 'running';
+      const newInterval = setInterval(updateText, 1200);
+      // keep reference to stop if hover again
+      tube._newInterval = newInterval;
+    });
+
+    // If you want strict hover pause/resume without stacking intervals,
+    // replace the pause handlers with a single interval management approach.
+  </script>
+</body>
+</html>
