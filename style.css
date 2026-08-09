@@ -116,6 +116,84 @@ body {
   cursor: pointer;
 }
 
+```css
+/* =========================
+   MUSIC PROGRESS BAR
+   ========================= */
+
+.progress-container {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+.progress-container span {
+  flex-shrink: 0;
+
+  width: 32px;
+
+  color: #D1CCDC;
+
+  font-size: 9px;
+
+  text-align: center;
+}
+
+#progress {
+  flex: 1;
+
+  height: 4px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: #D1CCDC;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}
+
+/* Chrome / Edge / Safari */
+
+#progress::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+/* Firefox */
+
+#progress::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+```
+
+
 /* Volume slider button */
 #volume::-webkit-slider-thumb {
   appearance: none;
