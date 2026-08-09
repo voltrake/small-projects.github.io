@@ -385,6 +385,8 @@
   </div>
 
 
+  
+
   <!-- Audio element -->
 
   <audio id="audio"></audio>
@@ -586,6 +588,89 @@
         });
 
     }
+
+    ```javascript
+const progress = document.getElementById("progress");
+const currentTime = document.getElementById("currentTime");
+const duration = document.getElementById("duration");
+```
+
+Then add these event listeners:
+
+```javascript
+/* =========================
+   UPDATE PROGRESS BAR
+   ========================= */
+
+audio.addEventListener("timeupdate", () => {
+
+  if (!audio.duration) {
+    return;
+  }
+
+  const percentage =
+    (audio.currentTime / audio.duration) * 100;
+
+  progress.value = percentage;
+
+  currentTime.textContent =
+    formatTime(audio.currentTime);
+
+});
+
+
+/* =========================
+   LOAD SONG DURATION
+   ========================= */
+
+audio.addEventListener("loadedmetadata", () => {
+
+  duration.textContent =
+    formatTime(audio.duration);
+
+});
+
+
+/* =========================
+   SEEK THROUGH SONG
+   ========================= */
+
+progress.addEventListener("input", () => {
+
+  if (!audio.duration) {
+    return;
+  }
+
+  const time =
+    (progress.value / 100) * audio.duration;
+
+  audio.currentTime = time;
+
+});
+
+
+/* =========================
+   FORMAT TIME
+   ========================= */
+
+function formatTime(seconds) {
+
+  if (isNaN(seconds)) {
+    return "0:00";
+  }
+
+  const minutes = Math.floor(seconds / 60);
+
+  const remainingSeconds =
+    Math.floor(seconds % 60);
+
+  return (
+    minutes +
+    ":" +
+    remainingSeconds.toString().padStart(2, "0")
+  );
+
+}
 
   </script>
 
