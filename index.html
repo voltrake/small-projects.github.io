@@ -389,287 +389,285 @@
   <audio id="audio"></audio>
 
 
-  <script>
+  ```html
+<script>
 
-    const button = document.getElementById("playButton");
-    const audio = document.getElementById("audio");
-    const volume = document.getElementById("volume");
+  const button = document.getElementById("playButton");
+  const audio = document.getElementById("audio");
+  const volume = document.getElementById("volume");
 
-    const addButton = document.getElementById("addButton");
-    const fileInput = document.getElementById("fileInput");
+  const addButton = document.getElementById("addButton");
+  const fileInput = document.getElementById("fileInput");
 
-    const songList = document.getElementById("songList");
-    const songTitle = document.getElementById("songTitle");
+  const songList = document.getElementById("songList");
+  const songTitle = document.getElementById("songTitle");
 
-
-    /* =========================
-       VARIABLES
-       ========================= */
-
-    let songs = [];
-    let currentSong = null;
+  const progress = document.getElementById("progress");
+  const currentTime = document.getElementById("currentTime");
+  const duration = document.getElementById("duration");
 
 
-    /* =========================
-       PLAY / PAUSE
-       ========================= */
+  /* =========================
+     VARIABLES
+     ========================= */
 
-    button.addEventListener("click", async () => {
+  let songs = [];
+  let currentSong = null;
 
-      if (!currentSong) {
-        return;
-      }
 
-      if (audio.paused) {
+  /* =========================
+     PLAY / PAUSE
+     ========================= */
 
-        try {
+  button.addEventListener("click", async () => {
 
-          await audio.play();
+    if (!currentSong) {
+      return;
+    }
 
-          button.textContent = "❚❚";
+    if (audio.paused) {
 
-        } catch (error) {
+      try {
 
-          console.error("Could not play audio:", error);
+        await audio.play();
 
-        }
+        button.textContent = "❚❚";
 
-      } else {
+      } catch (error) {
 
-        audio.pause();
-
-        button.textContent = "▶";
+        console.error("Could not play audio:", error);
 
       }
 
-    });
+    } else {
 
-
-    /* =========================
-       MUSIC ENDED
-       ========================= */
-
-    audio.addEventListener("ended", () => {
+      audio.pause();
 
       button.textContent = "▶";
 
-    });
-
-
-    /* =========================
-       VOLUME
-       ========================= */
-
-    volume.addEventListener("input", () => {
-
-      audio.volume = volume.value;
-
-    });
-
-    audio.volume = 0.7;
-
-
-    /* =========================
-       ADD MP3 BUTTON
-       ========================= */
-
-    addButton.addEventListener("click", () => {
-
-      fileInput.click();
-
-    });
-
-
-    /* =========================
-       FILE SELECTED
-       ========================= */
-
-    fileInput.addEventListener("change", (event) => {
-
-      const files = Array.from(event.target.files);
-
-      files.forEach(file => {
-
-        if (!file.type.includes("audio") && !file.name.toLowerCase().endsWith(".mp3")) {
-          return;
-        }
-
-        songs.push(file);
-
-      });
-
-      displaySongs();
-
-      /*
-       * Reset the input so the same file
-       * can be selected again later.
-       */
-
-      fileInput.value = "";
-
-    });
-
-
-    /* =========================
-       DISPLAY SONGS
-       ========================= */
-
-    function displaySongs() {
-
-      songList.innerHTML = "";
-
-      songs.forEach((song, index) => {
-
-        const songElement = document.createElement("div");
-
-        songElement.classList.add("song");
-
-        if (song === currentSong) {
-          songElement.classList.add("active");
-        }
-
-        songElement.textContent = song.name;
-
-        songElement.addEventListener("click", () => {
-
-          selectSong(index);
-
-        });
-
-        songList.appendChild(songElement);
-
-      });
-
     }
 
+  });
 
-    /* =========================
-       SELECT SONG
-       ========================= */
 
-    function selectSong(index) {
+  /* =========================
+     MUSIC ENDED
+     ========================= */
 
-      const song = songs[index];
+  audio.addEventListener("ended", () => {
 
-      if (!song) {
+    button.textContent = "▶";
+    progress.value = 0;
+
+  });
+
+
+  /* =========================
+     VOLUME
+     ========================= */
+
+  volume.addEventListener("input", () => {
+
+    audio.volume = volume.value;
+
+  });
+
+  audio.volume = 0.7;
+
+
+  /* =========================
+     ADD MP3 BUTTON
+     ========================= */
+
+  addButton.addEventListener("click", () => {
+
+    fileInput.click();
+
+  });
+
+
+  /* =========================
+     FILE SELECTED
+     ========================= */
+
+  fileInput.addEventListener("change", (event) => {
+
+    const files = Array.from(event.target.files);
+
+    files.forEach(file => {
+
+      if (
+        file.type !== "audio/mpeg" &&
+        !file.name.toLowerCase().endsWith(".mp3")
+      ) {
         return;
       }
 
-      currentSong = song;
+      songs.push(file);
 
-      /*
-       * Create a temporary URL
-       * for the selected MP3.
-       */
+    });
 
-      const url = URL.createObjectURL(song);
+    displaySongs();
 
-      audio.src = url;
+    /* Allow selecting the same file again */
+    fileInput.value = "";
 
-      songTitle.textContent = song.name;
+  });
 
-      button.textContent = "▶";
 
-      displaySongs();
+  /* =========================
+     DISPLAY SONGS
+     ========================= */
 
-      audio.play()
-        .then(() => {
+  function displaySongs() {
 
-          button.textContent = "❚❚";
+    songList.innerHTML = "";
 
-        })
-        .catch(error => {
+    songs.forEach((song, index) => {
 
-          console.error("Could not play audio:", error);
+      const songElement = document.createElement("div");
 
-        });
+      songElement.classList.add("song");
 
+      if (song === currentSong) {
+        songElement.classList.add("active");
+      }
+
+      songElement.textContent = song.name;
+
+      songElement.addEventListener("click", () => {
+
+        selectSong(index);
+
+      });
+
+      songList.appendChild(songElement);
+
+    });
+
+  }
+
+
+  /* =========================
+     SELECT SONG
+     ========================= */
+
+  function selectSong(index) {
+
+    const song = songs[index];
+
+    if (!song) {
+      return;
     }
 
-    ```javascript
-const progress = document.getElementById("progress");
-const currentTime = document.getElementById("currentTime");
-const duration = document.getElementById("duration");
-```
+    currentSong = song;
 
-Then add these event listeners:
+    const url = URL.createObjectURL(song);
 
-```javascript
-/* =========================
-   UPDATE PROGRESS BAR
-   ========================= */
+    audio.src = url;
 
-audio.addEventListener("timeupdate", () => {
+    songTitle.textContent = song.name;
 
-  if (!audio.duration) {
-    return;
+    button.textContent = "▶";
+
+    progress.value = 0;
+
+    currentTime.textContent = "0:00";
+    duration.textContent = "0:00";
+
+    displaySongs();
+
+    audio.play()
+      .then(() => {
+
+        button.textContent = "❚❚";
+
+      })
+      .catch(error => {
+
+        console.error("Could not play audio:", error);
+
+      });
+
   }
 
-  const percentage =
-    (audio.currentTime / audio.duration) * 100;
 
-  progress.value = percentage;
+  /* =========================
+     UPDATE PROGRESS BAR
+     ========================= */
 
-  currentTime.textContent =
-    formatTime(audio.currentTime);
+  audio.addEventListener("timeupdate", () => {
 
-});
+    if (!audio.duration) {
+      return;
+    }
+
+    const percentage =
+      (audio.currentTime / audio.duration) * 100;
+
+    progress.value = percentage;
+
+    currentTime.textContent =
+      formatTime(audio.currentTime);
+
+  });
 
 
-/* =========================
-   LOAD SONG DURATION
-   ========================= */
+  /* =========================
+     LOAD SONG DURATION
+     ========================= */
 
-audio.addEventListener("loadedmetadata", () => {
+  audio.addEventListener("loadedmetadata", () => {
 
-  duration.textContent =
-    formatTime(audio.duration);
+    duration.textContent =
+      formatTime(audio.duration);
 
-});
+  });
 
 
-/* =========================
-   SEEK THROUGH SONG
-   ========================= */
+  /* =========================
+     SEEK THROUGH SONG
+     ========================= */
 
-progress.addEventListener("input", () => {
+  progress.addEventListener("input", () => {
 
-  if (!audio.duration) {
-    return;
+    if (!audio.duration) {
+      return;
+    }
+
+    const time =
+      (progress.value / 100) * audio.duration;
+
+    audio.currentTime = time;
+
+  });
+
+
+  /* =========================
+     FORMAT TIME
+     ========================= */
+
+  function formatTime(seconds) {
+
+    if (isNaN(seconds)) {
+      return "0:00";
+    }
+
+    const minutes =
+      Math.floor(seconds / 60);
+
+    const remainingSeconds =
+      Math.floor(seconds % 60);
+
+    return (
+      minutes +
+      ":" +
+      remainingSeconds.toString().padStart(2, "0")
+    );
+
   }
 
-  const time =
-    (progress.value / 100) * audio.duration;
-
-  audio.currentTime = time;
-
-});
-
-
-/* =========================
-   FORMAT TIME
-   ========================= */
-
-function formatTime(seconds) {
-
-  if (isNaN(seconds)) {
-    return "0:00";
-  }
-
-  const minutes = Math.floor(seconds / 60);
-
-  const remainingSeconds =
-    Math.floor(seconds % 60);
-
-  return (
-    minutes +
-    ":" +
-    remainingSeconds.toString().padStart(2, "0")
-  );
-
-}
-
-  </script>
+</script>
 
 </body>
 </html>
