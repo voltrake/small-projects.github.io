@@ -656,7 +656,7 @@ async function loadSongs() {
 
     songElement.classList.add("song");
 
-    if (song === currentSong) {
+   if (song.id === currentSong?.id) {
       songElement.classList.add("active");
     }
 
