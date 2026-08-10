@@ -364,50 +364,59 @@
         ▶
       </button>
 
-      <div class="music-info">
+ 
+<div class="music-info">
 
-        <span id="songTitle">
-          No song selected
-        </span>
+  <div class="song-title-row">
 
-        <small>
-          Music Player
-        </small>
+    <span id="songTitle">
+      No song selected
+    </span>
 
+    <canvas id="spectrum"></canvas>
 
-<div class="volume">
+  </div>
 
-  <input
-    id="volume"
-    type="range"
-    min="0"
-    max="1"
-    step="0.01"
-    value="0.7"
-  >
+  <small>
+    Music Player
+  </small>
+
+  <div class="volume">
+
+    <input
+      id="volume"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value="0.7"
+    >
+
+  </div>
+
+  <div class="progress-container">
+
+    <span id="currentTime">
+      0:00
+    </span>
+
+    <input
+      id="progress"
+      type="range"
+      min="0"
+      max="100"
+      value="0"
+      step="0.1"
+    >
+
+    <span id="duration">
+      0:00
+    </span>
+
+  </div>
 
 </div>
 
-<!-- Music progress / seek bar -->
-
-<div class="progress-container">
-
-  <span id="currentTime">0:00</span>
-
-  <input
-    id="progress"
-    type="range"
-    min="0"
-    max="100"
-    value="0"
-    step="0.1"
-  >
-
-  <span id="duration">0:00</span>
-
-</div>
-
-      </div>
 
     </main>
 
