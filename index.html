@@ -432,6 +432,7 @@
 
   const songList = document.getElementById("songList");
   const songTitle = document.getElementById("songTitle");
+  const searchInput = document.getElementById("searchInput");
 
   const progress = document.getElementById("progress");
   const currentTime = document.getElementById("currentTime");
@@ -551,6 +552,17 @@
      ========================= */
 
   function displaySongs() {
+  songList.innerHTML = "";
+
+  const searchTerm = searchInput.value.trim().toLowerCase();
+
+  songs.forEach((song, index) => {
+
+    if (searchTerm && !song.name.toLowerCase().includes(searchTerm)) {
+      return;
+    }
+
+    const songElement = document.createElement("div");
 
     songList.innerHTML = "";
 
@@ -578,6 +590,9 @@
 
   }
 
+                searchInput.addEventListener("input", () => {
+  displaySongs();
+});
 
   /* =========================
      SELECT SONG
