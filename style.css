@@ -1,223 +1,522 @@
-- {
+
+* {
   box-sizing: border-box;
-  }
+}
 
 html,
 body {
-width: 100%;
-height: 100%;
-margin: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
 }
 
 body {
-display: flex;
-justify-content: center;
-align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-background: #D1CCDC;
+  background: #D1CCDC;
 
-font-family: Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
-/\* Main music box \*/
+
+/* =========================
+   MAIN MUSIC BOX
+   ========================= */
+
 .music-box {
-width: 280px;
-padding: 16px;
+  width: 600px;
+  min-height: 320px;
 
-display: flex;
-align-items: center;
-gap: 14px;
+  display: flex;
 
-background: #2E3641;
+  background: #2E3641;
 
-border-radius: 14px;
+  border-radius: 14px;
 
-box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
+  overflow: hidden;
+
+  box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
 }
 
-/\* Play button \*/
+
+/* =========================
+   LEFT MUSIC LIBRARY
+   ========================= */
+
+.music-library {
+  width: 220px;
+
+  padding: 16px;
+
+  background: #171D27;
+
+  color: #D1CCDC;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.library-title {
+  margin: 0 0 10px 0;
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+
+/* =========================
+   SEARCH BAR
+   ========================= */
+
+.search-container {
+  margin-bottom: 10px;
+}
+
+
+#searchInput {
+  width: 100%;
+
+  padding: 7px 10px;
+
+  border: 1px solid #2E3641;
+  border-radius: 8px;
+
+  background: #2E3641;
+  color: #D1CCDC;
+
+  font-size: 12px;
+
+  outline: none;
+}
+
+
+#searchInput::placeholder {
+  color: #D1CCDC;
+
+  opacity: 0.6;
+}
+
+
+#searchInput:focus {
+  border-color: #D1CCDC;
+}
+
+
+/* =========================
+   ADD MP3 BUTTON
+   ========================= */
+
+.add-button {
+  width: 100%;
+
+  padding: 10px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #D1CCDC;
+  color: #171D27;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: transform 0.2s ease;
+}
+
+
+.add-button:hover {
+  transform: scale(1.03);
+}
+
+
+/* =========================
+   SONG LIST
+   ========================= */
+
+.song-list {
+  margin-top: 15px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  overflow-y: auto;
+}
+
+
+.song {
+  width: 100%;
+
+  padding: 9px;
+
+  border-radius: 7px;
+
+  color: #D1CCDC;
+
+  font-size: 12px;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  transition: background 0.2s ease;
+}
+
+
+.song:hover {
+  background: #2E3641;
+}
+
+
+.song.active {
+  background: #2E3641;
+}
+
+
+/* =========================
+   RIGHT PLAYER
+   ========================= */
+
+.player {
+  flex: 1;
+
+  padding: 20px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+
+/* =========================
+   PLAY BUTTON
+   ========================= */
+
 .play-button {
-flex-shrink: 0;
+  flex-shrink: 0;
 
-width: 48px;
-height: 48px;
+  width: 48px;
+  height: 48px;
 
-border: none;
-border-radius: 50%;
+  border: none;
 
-background: #D1CCDC;
-color: #2E3641;
+  border-radius: 50%;
 
-font-size: 18px;
+  background: #D1CCDC;
 
-cursor: pointer;
+  color: #2E3641;
 
-display: flex;
-align-items: center;
-justify-content: center;
+  font-size: 18px;
 
-transition: transform 0.2s ease;
+  cursor: pointer;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  transition: transform 0.2s ease;
 }
 
-.play-button\:hover {
-transform: scale(1.08);
+
+.play-button:hover {
+  transform: scale(1.08);
 }
 
-/\* Music information \*/
+
+/* =========================
+   MUSIC INFORMATION
+   ========================= */
+
 .music-info {
-flex: 1;
+  flex: 1;
 
-min-width: 0;
+  min-width: 0;
 
-display: flex;
-flex-direction: column;
-gap: 4px;
+  display: flex;
 
-color: #D1CCDC;
+  flex-direction: column;
+
+  gap: 4px;
+
+  color: #D1CCDC;
 }
 
-.music-info span {
-font-size: 15px;
-font-weight: 600;
-}
 
 .music-info small {
-font-size: 11px;
-opacity: 0.7;
+  font-size: 11px;
+
+  opacity: 0.7;
 }
 
-/\* Volume \*/
+
+/* =========================
+   SONG TITLE + SPECTRUM
+   ========================= */
+
+.song-title-row {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+
+.song-title-row span {
+  flex: 1;
+
+  min-width: 0;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =========================
+   AUDIO SPECTRUM
+   ========================= */
+
+#spectrum {
+  flex-shrink: 0;
+
+  width: 80px;
+
+  height: 28px;
+
+  display: block;
+}
+
+
+/* =========================
+   VOLUME
+   ========================= */
+
 .volume {
-width: 100%;
+  width: 100%;
 
-display: flex;
-align-items: center;
-gap: 7px;
+  display: flex;
 
-margin-top: 5px;
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 5px;
 }
+
 
 .volume span {
-font-size: 12px;
-}
-
-\#volume {
-flex: 1;
-
-height: 4px;
-
-appearance: none;
--webkit-appearance: none;
-
-background: #D1CCDC;
-
-border-radius: 10px;
-
-cursor: pointer;
-}
-
-/\* =========================
-MUSIC PROGRESS BAR
-\========================= \*/
-
-.progress-container {
-width: 100%;
-
-display: flex;
-align-items: center;
-
-gap: 7px;
-
-margin-top: 8px;
-}
-
-.progress-container span {
-flex-shrink: 0;
-
-width: 32px;
-
-color: #D1CCDC;
-
-font-size: 9px;
-
-text-align: center;
-}
-
-\#progress {
-flex: 1;
-
-height: 4px;
-
-appearance: none;
--webkit-appearance: none;
-
-background: #D1CCDC;
-
-border-radius: 10px;
-
-cursor: pointer;
-}
-
-/\* Chrome / Edge / Safari \*/
-
-\#progress::-webkit-slider-thumb {
-appearance: none;
--webkit-appearance: none;
-
-width: 11px;
-height: 11px;
-
-background: #D1CCDC;
-
-border: 2px solid #2E3641;
-
-border-radius: 50%;
-
-cursor: pointer;
-}
-
-/\* Firefox \*/
-
-\#progress::-moz-range-thumb {
-width: 11px;
-height: 11px;
-
-background: #D1CCDC;
-
-border: 2px solid #2E3641;
-
-border-radius: 50%;
-
-cursor: pointer;
+  font-size: 12px;
 }
 
 
+#volume {
+  flex: 1;
+
+  height: 4px;
+
+  appearance: none;
+
+  -webkit-appearance: none;
+
+  background: #D1CCDC;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}
 
 
-/* Volume slider button */
+/* =========================
+   VOLUME SLIDER BUTTON
+   ========================= */
+
 #volume::-webkit-slider-thumb {
   appearance: none;
+
   -webkit-appearance: none;
 
   width: 11px;
+
   height: 11px;
 
   background: #D1CCDC;
 
   border: 2px solid #2E3641;
+
   border-radius: 50%;
 
   cursor: pointer;
 }
+
 
 #volume::-moz-range-thumb {
   width: 11px;
+
   height: 11px;
 
   background: #D1CCDC;
 
   border: 2px solid #2E3641;
+
   border-radius: 50%;
 
   cursor: pointer;
 }
+
+
+/* =========================
+   MUSIC PROGRESS BAR
+   ========================= */
+
+.progress-container {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+
+.progress-container span {
+  flex-shrink: 0;
+
+  width: 32px;
+
+  color: #D1CCDC;
+
+  font-size: 9px;
+
+  text-align: center;
+}
+
+
+#progress {
+  flex: 1;
+
+  height: 4px;
+
+  appearance: none;
+
+  -webkit-appearance: none;
+
+  background: #D1CCDC;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}
+
+
+/* =========================
+   PROGRESS SLIDER - CHROME
+   ========================= */
+
+#progress::-webkit-slider-thumb {
+  appearance: none;
+
+  -webkit-appearance: none;
+
+  width: 11px;
+
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+
+/* =========================
+   PROGRESS SLIDER - FIREFOX
+   ========================= */
+
+#progress::-moz-range-thumb {
+  width: 11px;
+
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+
+/* =========================
+   HIDDEN FILE INPUT
+   ========================= */
+
+#fileInput {
+  display: none;
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 650px) {
+
+  .music-box {
+    width: 95%;
+  }
+
+  .music-library {
+    width: 170px;
+  }
+
+}
+
+
+@media (max-width: 480px) {
+
+  .music-box {
+    flex-direction: column;
+  }
+
+  .music-library {
+    width: 100%;
+  }
+
+  .player {
+    width: 100%;
+  }
+
+}
+
