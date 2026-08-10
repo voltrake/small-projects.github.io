@@ -1,197 +1,197 @@
-* {
+- {
   box-sizing: border-box;
-}
+  }
 
 html,
 body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
+width: 100%;
+height: 100%;
+margin: 0;
 }
 
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+display: flex;
+justify-content: center;
+align-items: center;
 
-  background: #D1CCDC;
+background: #D1CCDC;
 
-  font-family: Arial, sans-serif;
+font-family: Arial, sans-serif;
 }
 
-/* Main music box */
+/\* Main music box \*/
 .music-box {
-  width: 280px;
-  padding: 16px;
+width: 280px;
+padding: 16px;
 
-  display: flex;
-  align-items: center;
-  gap: 14px;
+display: flex;
+align-items: center;
+gap: 14px;
 
-  background: #2E3641;
+background: #2E3641;
 
-  border-radius: 14px;
+border-radius: 14px;
 
-  box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
+box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
 }
 
-/* Play button */
+/\* Play button \*/
 .play-button {
-  flex-shrink: 0;
+flex-shrink: 0;
 
-  width: 48px;
-  height: 48px;
+width: 48px;
+height: 48px;
 
-  border: none;
-  border-radius: 50%;
+border: none;
+border-radius: 50%;
 
-  background: #D1CCDC;
-  color: #2E3641;
+background: #D1CCDC;
+color: #2E3641;
 
-  font-size: 18px;
+font-size: 18px;
 
-  cursor: pointer;
+cursor: pointer;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 
-  transition: transform 0.2s ease;
+transition: transform 0.2s ease;
 }
 
-.play-button:hover {
-  transform: scale(1.08);
+.play-button\:hover {
+transform: scale(1.08);
 }
 
-/* Music information */
+/\* Music information \*/
 .music-info {
-  flex: 1;
+flex: 1;
 
-  min-width: 0;
+min-width: 0;
 
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+display: flex;
+flex-direction: column;
+gap: 4px;
 
-  color: #D1CCDC;
+color: #D1CCDC;
 }
 
 .music-info span {
-  font-size: 15px;
-  font-weight: 600;
+font-size: 15px;
+font-weight: 600;
 }
 
 .music-info small {
-  font-size: 11px;
-  opacity: 0.7;
+font-size: 11px;
+opacity: 0.7;
 }
 
-/* Volume */
+/\* Volume \*/
 .volume {
-  width: 100%;
+width: 100%;
 
-  display: flex;
-  align-items: center;
-  gap: 7px;
+display: flex;
+align-items: center;
+gap: 7px;
 
-  margin-top: 5px;
+margin-top: 5px;
 }
 
 .volume span {
-  font-size: 12px;
+font-size: 12px;
 }
 
-#volume {
-  flex: 1;
+\#volume {
+flex: 1;
 
-  height: 4px;
+height: 4px;
 
-  appearance: none;
-  -webkit-appearance: none;
+appearance: none;
+-webkit-appearance: none;
 
-  background: #D1CCDC;
+background: #D1CCDC;
 
-  border-radius: 10px;
+border-radius: 10px;
 
-  cursor: pointer;
+cursor: pointer;
 }
 
-
-/* =========================
-   MUSIC PROGRESS BAR
-   ========================= */
+/\* =========================
+MUSIC PROGRESS BAR
+\========================= \*/
 
 .progress-container {
-  width: 100%;
+width: 100%;
 
-  display: flex;
-  align-items: center;
+display: flex;
+align-items: center;
 
-  gap: 7px;
+gap: 7px;
 
-  margin-top: 8px;
+margin-top: 8px;
 }
 
 .progress-container span {
-  flex-shrink: 0;
+flex-shrink: 0;
 
-  width: 32px;
+width: 32px;
 
-  color: #D1CCDC;
+color: #D1CCDC;
 
-  font-size: 9px;
+font-size: 9px;
 
-  text-align: center;
+text-align: center;
 }
 
-#progress {
-  flex: 1;
+\#progress {
+flex: 1;
 
-  height: 4px;
+height: 4px;
 
-  appearance: none;
-  -webkit-appearance: none;
+appearance: none;
+-webkit-appearance: none;
 
-  background: #D1CCDC;
+background: #D1CCDC;
 
-  border-radius: 10px;
+border-radius: 10px;
 
-  cursor: pointer;
+cursor: pointer;
 }
 
-/* Chrome / Edge / Safari */
+/\* Chrome / Edge / Safari \*/
 
-#progress::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
+\#progress::-webkit-slider-thumb {
+appearance: none;
+-webkit-appearance: none;
 
-  width: 11px;
-  height: 11px;
+width: 11px;
+height: 11px;
 
-  background: #D1CCDC;
+background: #D1CCDC;
 
-  border: 2px solid #2E3641;
+border: 2px solid #2E3641;
 
-  border-radius: 50%;
+border-radius: 50%;
 
-  cursor: pointer;
+cursor: pointer;
 }
 
-/* Firefox */
+/\* Firefox \*/
 
-#progress::-moz-range-thumb {
-  width: 11px;
-  height: 11px;
+\#progress::-moz-range-thumb {
+width: 11px;
+height: 11px;
 
-  background: #D1CCDC;
+background: #D1CCDC;
 
-  border: 2px solid #2E3641;
+border: 2px solid #2E3641;
 
-  border-radius: 50%;
+border-radius: 50%;
 
-  cursor: pointer;
+cursor: pointer;
 }
-```
+
+
 
 
 /* Volume slider button */
@@ -221,49 +221,3 @@ body {
 
   cursor: pointer;
 }
-
-
-/* =========================
-   SONG TITLE + SPECTRUM
-   ========================= */
-
-.song-title-row {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  min-width: 0;
-}
-
-
-/* Song title */
-
-.song-title-row span {
-  flex: 1;
-
-  min-width: 0;
-
-  font-size: 15px;
-  font-weight: 600;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-/* Spectrum */
-
-#spectrum {
-  flex-shrink: 0;
-
-  width: 80px;
-  height: 28px;
-
-  display: block;
-}
-
-
