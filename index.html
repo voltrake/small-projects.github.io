@@ -62,13 +62,37 @@
     }
 
     .library-title {
-      margin: 0 0 14px 0;
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  font-weight: 600;
+}
 
-      font-size: 15px;
-      font-weight: 600;
-    }
+/* Search bar */
+.search-container {
+  margin-bottom: 10px;
+}
 
-    /* Add MP3 button */
+#searchInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #2E3641;
+  border-radius: 8px;
+  background: #2E3641;
+  color: #D1CCDC;
+  font-size: 12px;
+  outline: none;
+}
+
+#searchInput::placeholder {
+  color: #D1CCDC;
+  opacity: 0.6;
+}
+
+#searchInput:focus {
+  border-color: #D1CCDC;
+}
+
+/* Add MP3 button */
     .add-button {
       width: 100%;
 
@@ -304,10 +328,18 @@
 
       <h3 class="library-title">My Music</h3>
 
-      <button class="add-button" id="addButton">
-        + Add MP3
-      </button>
+<div class="search-container">
+  <input
+    type="search"
+    id="searchInput"
+    placeholder="Search music..."
+    autocomplete="off"
+  >
+</div>
 
+<button class="add-button" id="addButton">
+  + Add MP3
+</button>
       <input
         type="file"
         id="fileInput"
