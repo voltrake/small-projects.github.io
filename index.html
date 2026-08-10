@@ -420,9 +420,7 @@
 
   <audio id="audio"></audio>
 
-
 <script>
-
   const button = document.getElementById("playButton");
   const audio = document.getElementById("audio");
   const volume = document.getElementById("volume");
@@ -443,79 +441,110 @@
      VARIABLES
      ========================= */
 
-let songs = [];
-let currentSong = null;
+  let songs = [];
+  let currentSong = null;
+  let currentObjectURL = null;
 
-const DB_NAME = "MyMusicDB";
-const STORE_NAME = "songs";
+  const DB_NAME = "MyMusicDB";
+  const STORE_NAME = "songs";
+
+
+  /* =========================
+     INDEXEDDB
+     ========================= */
 
   function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    return new Promise((resolve, reject) => {
 
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
+      const request = indexedDB.open(DB_NAME, 1);
 
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, {
-          keyPath: "id",
-          autoIncrement: true
-        });
-      }
-    };
+      request.onupgradeneeded = (event) => {
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+        const db = event.target.result;
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-  });
-}
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
 
+          db.createObjectStore(STORE_NAME, {
+            keyPath: "id",
+            autoIncrement: true
+          });
 
-async function saveSong(file) {
-  const db = await openDatabase();
+        }
+      };
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
 
-    store.add({
-      name: file.name,
-      file: file
+      request.onerror = () => {
+        reject(request.error);
+      };
+
     });
-
-    transaction.oncomplete = () => {
-      resolve();
-    };
-
-    transaction.onerror = () => {
-      reject(transaction.error);
-    };
-  });
-}
+  }
 
 
-async function loadSongs() {
-  const db = await openDatabase();
+  /* =========================
+     SAVE SONG
+     ========================= */
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
+  async function saveSong(file) {
 
-    const request = store.getAll();
+    const db = await openDatabase();
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+    return new Promise((resolve, reject) => {
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-  });
-}
+      const transaction =
+        db.transaction(STORE_NAME, "readwrite");
+
+      const store =
+        transaction.objectStore(STORE_NAME);
+
+      store.add({
+        name: file.name,
+        file: file
+      });
+
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+
+    });
+  }
+
+
+  /* =========================
+     LOAD SONGS
+     ========================= */
+
+  async function loadSongs() {
+
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+
+      const transaction =
+        db.transaction(STORE_NAME, "readonly");
+
+      const store =
+        transaction.objectStore(STORE_NAME);
+
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+
+    });
+  }
 
 
   /* =========================
@@ -538,7 +567,10 @@ async function loadSongs() {
 
       } catch (error) {
 
-        console.error("Could not play audio:", error);
+        console.error(
+          "Could not play audio:",
+          error
+        );
 
       }
 
@@ -560,7 +592,10 @@ async function loadSongs() {
   audio.addEventListener("ended", () => {
 
     button.textContent = "▶";
+
     progress.value = 0;
+
+    currentTime.textContent = "0:00";
 
   });
 
@@ -571,7 +606,7 @@ async function loadSongs() {
 
   volume.addEventListener("input", () => {
 
-    audio.volume = volume.value;
+    audio.volume = Number(volume.value);
 
   });
 
@@ -593,43 +628,36 @@ async function loadSongs() {
      FILE SELECTED
      ========================= */
 
-  fileInput.addEventListener("change", (event) => {
+  fileInput.addEventListener("change", async (event) => {
 
     const files = Array.from(event.target.files);
 
-    files.forEach(file => {
+    for (const file of files) {
 
       if (
         file.type !== "audio/mpeg" &&
         !file.name.toLowerCase().endsWith(".mp3")
       ) {
-        return;
+        continue;
       }
 
-      fileInput.addEventListener("change", async (event) => {
+      try {
 
-  const files = Array.from(event.target.files);
+        await saveSong(file);
 
-  for (const file of files) {
+      } catch (error) {
 
-    if (
-      file.type !== "audio/mpeg" &&
-      !file.name.toLowerCase().endsWith(".mp3")
-    ) {
-      continue;
+        console.error(
+          "Could not save song:",
+          error
+        );
+
+      }
+
     }
 
-    await saveSong(file);
-  }
-
-  await initializeMusic();
-
-  fileInput.value = "";
-});
-
-    });
-
-    displaySongs();
+    /* Reload songs from IndexedDB */
+    await initializeMusic();
 
     /* Allow selecting the same file again */
     fileInput.value = "";
@@ -641,34 +669,68 @@ async function loadSongs() {
      DISPLAY SONGS
      ========================= */
 
- function displaySongs() {
-  songList.innerHTML = "";
+  function displaySongs() {
 
-  const searchTerm = searchInput.value.trim().toLowerCase();
+    songList.innerHTML = "";
 
-  songs.forEach((song, index) => {
+    const searchTerm =
+      searchInput.value.trim().toLowerCase();
 
-    if (searchTerm && !song.name.toLowerCase().includes(searchTerm)) {
-      return;
-    }
 
-    const songElement = document.createElement("div");
+    songs.forEach((song, index) => {
 
-    songElement.classList.add("song");
+      if (
+        searchTerm &&
+        !song.name.toLowerCase().includes(searchTerm)
+      ) {
+        return;
+      }
 
-   if (song.id === currentSong?.id) {
-      songElement.classList.add("active");
-    }
 
-    songElement.textContent = song.name;
+      const songElement =
+        document.createElement("div");
 
-    songElement.addEventListener("click", () => {
-      selectSong(index);
+      songElement.classList.add("song");
+
+
+      if (
+        currentSong &&
+        song.id === currentSong.id
+      ) {
+
+        songElement.classList.add("active");
+
+      }
+
+
+      songElement.textContent = song.name;
+
+
+      songElement.addEventListener("click", () => {
+
+        selectSong(index);
+
+      });
+
+
+      songList.appendChild(songElement);
+
     });
 
-    songList.appendChild(songElement);
+  }
+
+
+  /* =========================
+     SEARCH
+     ========================= */
+
+  searchInput.addEventListener("input", () => {
+
+    displaySongs();
+
   });
-}
+
+
   /* =========================
      SELECT SONG
      ========================= */
@@ -681,22 +743,49 @@ async function loadSongs() {
       return;
     }
 
+
     currentSong = song;
 
-    const url = URL.createObjectURL(song);
 
-    audio.src = url;
+    /*
+      Delete the previous temporary URL
+      before creating a new one.
+    */
+
+    if (currentObjectURL) {
+
+      URL.revokeObjectURL(currentObjectURL);
+
+    }
+
+
+    /*
+      IMPORTANT:
+      The MP3 is stored inside song.file
+    */
+
+    currentObjectURL =
+      URL.createObjectURL(song.file);
+
+
+    audio.src = currentObjectURL;
+
 
     songTitle.textContent = song.name;
 
+
     button.textContent = "▶";
+
 
     progress.value = 0;
 
     currentTime.textContent = "0:00";
+
     duration.textContent = "0:00";
 
+
     displaySongs();
+
 
     audio.play()
       .then(() => {
@@ -704,9 +793,12 @@ async function loadSongs() {
         button.textContent = "❚❚";
 
       })
-      .catch(error => {
+      .catch((error) => {
 
-        console.error("Could not play audio:", error);
+        console.error(
+          "Could not play audio:",
+          error
+        );
 
       });
 
@@ -723,10 +815,13 @@ async function loadSongs() {
       return;
     }
 
+
     const percentage =
       (audio.currentTime / audio.duration) * 100;
 
+
     progress.value = percentage;
+
 
     currentTime.textContent =
       formatTime(audio.currentTime);
@@ -756,8 +851,11 @@ async function loadSongs() {
       return;
     }
 
+
     const time =
-      (progress.value / 100) * audio.duration;
+      (progress.value / 100) *
+      audio.duration;
+
 
     audio.currentTime = time;
 
@@ -774,28 +872,59 @@ async function loadSongs() {
       return "0:00";
     }
 
+
     const minutes =
       Math.floor(seconds / 60);
+
 
     const remainingSeconds =
       Math.floor(seconds % 60);
 
+
     return (
       minutes +
       ":" +
-      remainingSeconds.toString().padStart(2, "0")
+      remainingSeconds
+        .toString()
+        .padStart(2, "0")
     );
 
   }
-  
-async function initializeMusic() {
-  songs = await loadSongs();
 
-  displaySongs();
-}
 
-initializeMusic();
+  /* =========================
+     INITIALIZE MUSIC
+     ========================= */
+
+  async function initializeMusic() {
+
+    try {
+
+      songs = await loadSongs();
+
+      displaySongs();
+
+    } catch (error) {
+
+      console.error(
+        "Could not load songs:",
+        error
+      );
+
+    }
+
+  }
+
+
+  /* =========================
+     START
+     ========================= */
+
+  initializeMusic();
+
 </script>
+
+
 
 </body>
 </html>
