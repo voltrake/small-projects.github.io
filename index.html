@@ -797,6 +797,9 @@
 
 
     audio.play()
+      if (audioContext.state === "suspended") {
+  await audioContext.resume();
+}
       .then(() => {
 
         button.textContent = "❚❚";
@@ -930,6 +933,124 @@
      ========================= */
 
   initializeMusic();
+
+  const spectrum = document.getElementById("spectrum");
+/* =========================
+   AUDIO SPECTRUM ANALYZER
+   ========================= */
+
+const audioContext =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+const analyser =
+  audioContext.createAnalyser();
+
+analyser.fftSize = 128;
+
+analyser.smoothingTimeConstant = 0.75;
+
+const source =
+  audioContext.createMediaElementSource(audio);
+
+source.connect(analyser);
+analyser.connect(audioContext.destination);
+
+const spectrumContext =
+  spectrum.getContext("2d");
+
+const frequencyData =
+  new Uint8Array(analyser.frequencyBinCount);
+
+
+function drawSpectrum() {
+
+  requestAnimationFrame(drawSpectrum);
+
+  const width = spectrum.width;
+  const height = spectrum.height;
+
+  spectrumContext.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  /*
+    Only animate while the song
+    is actually playing.
+  */
+
+  if (audio.paused || audio.ended) {
+    return;
+  }
+
+
+  analyser.getByteFrequencyData(
+    frequencyData
+  );
+
+
+  const bars = 16;
+
+  const gap = 3;
+
+  const barWidth =
+    (width - gap * (bars - 1)) / bars;
+
+
+  for (let i = 0; i < bars; i++) {
+
+    /*
+      Use lower frequencies from
+      the beginning of the spectrum.
+    */
+
+    const dataIndex =
+      Math.floor(
+        i * frequencyData.length / bars
+      );
+
+
+    const value =
+      frequencyData[dataIndex];
+
+
+    const barHeight =
+      Math.max(
+        2,
+        (value / 255) * height
+      );
+
+
+    const x =
+      i * (barWidth + gap);
+
+
+    const y =
+      height - barHeight;
+
+
+    spectrumContext.fillStyle =
+      "#D1CCDC";
+
+
+    spectrumContext.fillRect(
+      x,
+      y,
+      barWidth,
+      barHeight
+    );
+
+  }
+
+}
+
+
+drawSpectrum();
+
+
 
 </script>
 
