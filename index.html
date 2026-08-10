@@ -1,4 +1,1140 @@
-   
+Text lipit(4).txt
+Document
+
+in this case how do I make the songs to remain for myself after refresighing the page?
+
+    {
+    box-sizing: border-box;
+    }
+
+html,
+body {
+width: 100%;
+height: 100%;
+margin: 0;
+}
+
+body {
+display: flex;
+justify-content: center;
+align-items: center;
+
+background: #D1CCDC;
+
+font-family: Arial, sans-serif;
+}
+
+/* Main music box */
+.music-box {
+width: 280px;
+padding: 16px;
+
+display: flex;
+align-items: center;
+gap: 14px;
+
+background: #2E3641;
+
+border-radius: 14px;
+
+box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
+}
+
+/* Play button */
+.play-button {
+flex-shrink: 0;
+
+width: 48px;
+height: 48px;
+
+border: none;
+border-radius: 50%;
+
+background: #D1CCDC;
+color: #2E3641;
+
+font-size: 18px;
+
+cursor: pointer;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+transition: transform 0.2s ease;
+}
+
+.play-button:hover {
+transform: scale(1.08);
+}
+
+/* Music information */
+.music-info {
+flex: 1;
+
+min-width: 0;
+
+display: flex;
+flex-direction: column;
+gap: 4px;
+
+color: #D1CCDC;
+}
+
+.music-info span {
+font-size: 15px;
+font-weight: 600;
+}
+
+.music-info small {
+font-size: 11px;
+opacity: 0.7;
+}
+
+/* Volume */
+.volume {
+width: 100%;
+
+display: flex;
+align-items: center;
+gap: 7px;
+
+margin-top: 5px;
+}
+
+.volume span {
+font-size: 12px;
+}
+
+#volume {
+flex: 1;
+
+height: 4px;
+
+appearance: none;
+-webkit-appearance: none;
+
+background: #D1CCDC;
+
+border-radius: 10px;
+
+cursor: pointer;
+}
+
+/* =========================
+MUSIC PROGRESS BAR
+========================= */
+
+.progress-container {
+width: 100%;
+
+display: flex;
+align-items: center;
+
+gap: 7px;
+
+margin-top: 8px;
+}
+
+.progress-container span {
+flex-shrink: 0;
+
+width: 32px;
+
+color: #D1CCDC;
+
+font-size: 9px;
+
+text-align: center;
+}
+
+#progress {
+flex: 1;
+
+height: 4px;
+
+appearance: none;
+-webkit-appearance: none;
+
+background: #D1CCDC;
+
+border-radius: 10px;
+
+cursor: pointer;
+}
+
+/* Chrome / Edge / Safari */
+
+#progress::-webkit-slider-thumb {
+appearance: none;
+-webkit-appearance: none;
+
+width: 11px;
+height: 11px;
+
+background: #D1CCDC;
+
+border: 2px solid #2E3641;
+
+border-radius: 50%;
+
+cursor: pointer;
+}
+
+/* Firefox */
+
+#progress::-moz-range-thumb {
+width: 11px;
+height: 11px;
+
+background: #D1CCDC;
+
+border: 2px solid #2E3641;
+
+border-radius: 50%;
+
+cursor: pointer;
+}
+
+
+
+/* Volume slider button */
+#volume::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+#volume::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+
+Yes. The important issue is that your songs are currently stored only in this JavaScript variable:
+
+let songs = [];
+
+and when you select an MP3, you store the browser File object here:
+
+songs.push(file);
+
+That works until you refresh. After a refresh, the JavaScript starts from scratch, and the File objects are gone. Your current code does exactly this at lines 446 and 538.
+The solution: IndexedDB
+
+For a music player where you want the actual MP3 files to remain available after refreshing, use IndexedDB.
+
+Do not use localStorage for the MP3 files. localStorage is intended for small text data, while IndexedDB can store File/Blob objects.
+
+Your structure would become:
+
+Add MP3
+   ↓
+File object
+   ↓
+IndexedDB
+   ↓
+Refresh page
+   ↓
+Load MP3s from IndexedDB
+   ↓
+Create object URLs
+   ↓
+Songs appear again
+
+1. Replace your let songs = [];
+
+Change:
+
+let songs = [];
+let currentSong = null;
+
+to:
+
+let songs = [];
+let currentSong = null;
+
+const DB_NAME = "MyMusicDB";
+const STORE_NAME = "songs";
+
+2. Add IndexedDB functions
+
+Put these functions after your variables:
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, {
+          keyPath: "id",
+          autoIncrement: true
+        });
+      }
+    };
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+}
+
+
+async function saveSong(file) {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+
+    store.add({
+      name: file.name,
+      file: file
+    });
+
+    transaction.oncomplete = () => {
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      reject(transaction.error);
+    };
+  });
+}
+
+
+async function loadSongs() {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+}
+
+3. Change your file selection code
+
+You currently have:
+
+songs.push(file);
+
+at line 538.
+
+Change the whole event listener to:
+
+fileInput.addEventListener("change", async (event) => {
+
+  const files = Array.from(event.target.files);
+
+  for (const file of files) {
+
+    if (
+      file.type !== "audio/mpeg" &&
+      !file.name.toLowerCase().endsWith(".mp3")
+    ) {
+      continue;
+    }
+
+    await saveSong(file);
+  }
+
+  await initializeMusic();
+
+  fileInput.value = "";
+});
+
+4. Load the songs when the page starts
+
+Add this near the bottom of your JavaScript:
+
+async function initializeMusic() {
+  songs = await loadSongs();
+
+  displaySongs();
+}
+
+initializeMusic();
+
+Now the behavior is:
+
+First visit:
+
++ Add MP3
+      ↓
+MP3 stored in IndexedDB
+      ↓
+Song appears
+
+Refresh:
+
+Page reloads
+      ↓
+initializeMusic()
+      ↓
+IndexedDB
+      ↓
+MP3s loaded
+      ↓
+Songs appear again
+
+One important change to selectSong()
+
+Because songs will now contain objects like:
+
+{
+  id: 1,
+  name: "my-song.mp3",
+  file: File
+}
+
+your current selectSong() needs to use .file.
+
+You currently have:
+
+const song = songs[index];
+
+currentSong = song;
+
+const url = URL.createObjectURL(song);
+
+The relevant code is at lines 586–600.
+
+Change it to:
+
+function selectSong(index) {
+
+  const song = songs[index];
+
+  if (!song) {
+    return;
+  }
+
+  currentSong = song;
+
+  const url = URL.createObjectURL(song.file);
+
+  audio.src = url;
+
+  songTitle.textContent = song.name;
+
+  button.textContent = "▶";
+
+  progress.value = 0;
+
+  currentTime.textContent = "0:00";
+  duration.textContent = "0:00";
+
+  displaySongs();
+
+  audio.play()
+    .then(() => {
+      button.textContent = "❚❚";
+    })
+    .catch(error => {
+      console.error("Could not play audio:", error);
+    });
+}
+
+And in displaySongs(), change:
+
+if (song === currentSong)
+
+to:
+
+if (song.id === currentSong?.id)
+
+The displayed name can stay:
+
+songElement.textContent = song.name;
+
+Result
+
+With these changes, the actual MP3 files stay in that browser's IndexedDB, so refreshing the page won't remove them.
+
+One caveat: this is browser/device-specific storage. If you clear the site's browser data, use private/incognito mode, or switch to another browser/device, the songs won't be there.
+
+Also, if by "remain for myself" you mean the songs should be permanently stored in your website so every visitor gets them, that's a different solution: you'd need to upload the MP3s to a server/cloud storage rather than IndexedDB.
+
+Yes. In your current structure, I would put the spectrum directly to the right of the song title, so it appears only as part of the player information area.
+1. Replace your song title section with this
+
+<div class="music-info">
+
+  <div class="song-title-row">
+
+    <span id="songTitle">
+      No song selected
+    </span>
+
+    <canvas id="spectrum"></canvas>
+
+  </div>
+
+  <small>
+    Music Player
+  </small>
+
+  <div class="volume">
+
+    <input
+      id="volume"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value="0.7"
+    >
+
+  </div>
+
+  <div class="progress-container">
+
+    <span id="currentTime">
+      0:00
+    </span>
+
+    <input
+      id="progress"
+      type="range"
+      min="0"
+      max="100"
+      value="0"
+      step="0.1"
+    >
+
+    <span id="duration">
+      0:00
+    </span>
+
+  </div>
+
+</div>
+
+So visually it will be approximately:
+
+▶   My Song.mp3   ▂▅▇▃▆▇▂
+    Music Player
+    ───────────────
+    0:12 ───────── 3:42
+
+2. Add this to style.css
+
+/* =========================
+   SONG TITLE + SPECTRUM
+   ========================= */
+
+.song-title-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.song-title-row span {
+  min-width: 0;
+
+  flex: 1;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Audio spectrum */
+
+#spectrum {
+  flex-shrink: 0;
+
+  width: 90px;
+  height: 28px;
+
+  display: block;
+}
+
+3. Add this JavaScript
+
+First, near your other DOM elements:
+
+const spectrum = document.getElementById("spectrum");
+
+Then add the following:
+
+/* =========================
+   AUDIO SPECTRUM ANALYZER
+   ========================= */
+
+const audioContext =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+const analyser =
+  audioContext.createAnalyser();
+
+analyser.fftSize = 128;
+
+analyser.smoothingTimeConstant = 0.75;
+
+const source =
+  audioContext.createMediaElementSource(audio);
+
+source.connect(analyser);
+analyser.connect(audioContext.destination);
+
+const spectrumContext =
+  spectrum.getContext("2d");
+
+const frequencyData =
+  new Uint8Array(analyser.frequencyBinCount);
+
+
+function drawSpectrum() {
+
+  requestAnimationFrame(drawSpectrum);
+
+  const width = spectrum.width;
+  const height = spectrum.height;
+
+  spectrumContext.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  /*
+    Only animate while the song
+    is actually playing.
+  */
+
+  if (audio.paused || audio.ended) {
+    return;
+  }
+
+
+  analyser.getByteFrequencyData(
+    frequencyData
+  );
+
+
+  const bars = 16;
+
+  const gap = 3;
+
+  const barWidth =
+    (width - gap * (bars - 1)) / bars;
+
+
+  for (let i = 0; i < bars; i++) {
+
+    /*
+      Use lower frequencies from
+      the beginning of the spectrum.
+    */
+
+    const dataIndex =
+      Math.floor(
+        i * frequencyData.length / bars
+      );
+
+
+    const value =
+      frequencyData[dataIndex];
+
+
+    const barHeight =
+      Math.max(
+        2,
+        (value / 255) * height
+      );
+
+
+    const x =
+      i * (barWidth + gap);
+
+
+    const y =
+      height - barHeight;
+
+
+    spectrumContext.fillStyle =
+      "#D1CCDC";
+
+
+    spectrumContext.fillRect(
+      x,
+      y,
+      barWidth,
+      barHeight
+    );
+
+  }
+
+}
+
+
+drawSpectrum();
+
+4. Update your play button
+
+Because browsers require user interaction before an AudioContext can start, change your existing play code to resume the audio context when the user presses Play:
+
+button.addEventListener("click", async () => {
+
+  if (!currentSong) {
+    return;
+  }
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  if (audio.paused) {
+
+    try {
+
+      await audio.play();
+
+      button.textContent = "❚❚";
+
+    } catch (error) {
+
+      console.error(
+        "Could not play audio:",
+        error
+      );
+
+    }
+
+  } else {
+
+    audio.pause();
+
+    button.textContent = "▶";
+
+  }
+
+});
+
+One more thing
+
+In your selectSong() function, you already have:
+
+audio.play()
+
+So add:
+
+if (audioContext.state === "suspended") {
+  await audioContext.resume();
+}
+
+However, because selectSong() isn't currently async, change it to:
+
+async function selectSong(index) {
+
+Then the relevant part becomes:
+
+async function selectSong(index) {
+
+  const song = songs[index];
+
+  if (!song) {
+    return;
+  }
+
+  currentSong = song;
+
+  if (currentObjectURL) {
+    URL.revokeObjectURL(currentObjectURL);
+  }
+
+  currentObjectURL =
+    URL.createObjectURL(song.file);
+
+  audio.src = currentObjectURL;
+
+  songTitle.textContent = song.name;
+
+  button.textContent = "▶";
+
+  progress.value = 0;
+
+  currentTime.textContent = "0:00";
+  duration.textContent = "0:00";
+
+  displaySongs();
+
+  try {
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    await audio.play();
+
+    button.textContent = "❚❚";
+
+  } catch (error) {
+
+    console.error(
+      "Could not play audio:",
+      error
+    );
+
+  }
+
+}
+
+That gives you a real frequency analyzer, not just a decorative animation: the bars respond to the frequencies of the MP3 currently playing.
+
+    {
+    box-sizing: border-box;
+    }
+
+html,
+body {
+width: 100%;
+height: 100%;
+margin: 0;
+}
+
+body {
+display: flex;
+justify-content: center;
+align-items: center;
+
+background: #D1CCDC;
+
+font-family: Arial, sans-serif;
+}
+
+/* Main music box */
+.music-box {
+width: 280px;
+padding: 16px;
+
+display: flex;
+align-items: center;
+gap: 14px;
+
+background: #2E3641;
+
+border-radius: 14px;
+
+box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25);
+}
+
+/* Play button */
+.play-button {
+flex-shrink: 0;
+
+width: 48px;
+height: 48px;
+
+border: none;
+border-radius: 50%;
+
+background: #D1CCDC;
+color: #2E3641;
+
+font-size: 18px;
+
+cursor: pointer;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+transition: transform 0.2s ease;
+}
+
+.play-button:hover {
+transform: scale(1.08);
+}
+
+/* Music information */
+.music-info {
+flex: 1;
+
+min-width: 0;
+
+display: flex;
+flex-direction: column;
+gap: 4px;
+
+color: #D1CCDC;
+}
+
+.music-info span {
+font-size: 15px;
+font-weight: 600;
+}
+
+.music-info small {
+font-size: 11px;
+opacity: 0.7;
+}
+
+/* Volume */
+.volume {
+width: 100%;
+
+display: flex;
+align-items: center;
+gap: 7px;
+
+margin-top: 5px;
+}
+
+.volume span {
+font-size: 12px;
+}
+
+#volume {
+flex: 1;
+
+height: 4px;
+
+appearance: none;
+-webkit-appearance: none;
+
+background: #D1CCDC;
+
+border-radius: 10px;
+
+cursor: pointer;
+}
+
+/* =========================
+MUSIC PROGRESS BAR
+========================= */
+
+.progress-container {
+width: 100%;
+
+display: flex;
+align-items: center;
+
+gap: 7px;
+
+margin-top: 8px;
+}
+
+.progress-container span {
+flex-shrink: 0;
+
+width: 32px;
+
+color: #D1CCDC;
+
+font-size: 9px;
+
+text-align: center;
+}
+
+#progress {
+flex: 1;
+
+height: 4px;
+
+appearance: none;
+-webkit-appearance: none;
+
+background: #D1CCDC;
+
+border-radius: 10px;
+
+cursor: pointer;
+}
+
+/* Chrome / Edge / Safari */
+
+#progress::-webkit-slider-thumb {
+appearance: none;
+-webkit-appearance: none;
+
+width: 11px;
+height: 11px;
+
+background: #D1CCDC;
+
+border: 2px solid #2E3641;
+
+border-radius: 50%;
+
+cursor: pointer;
+}
+
+/* Firefox */
+
+#progress::-moz-range-thumb {
+width: 11px;
+height: 11px;
+
+background: #D1CCDC;
+
+border: 2px solid #2E3641;
+
+border-radius: 50%;
+
+cursor: pointer;
+}
+
+
+
+/* Volume slider button */
+#volume::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+#volume::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+
+  background: #D1CCDC;
+
+  border: 2px solid #2E3641;
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+
+Your CSS is fine as the base player styling. To add the spectrum analyzer, you only need to add the spectrum-specific CSS below.
+
+One important point: the analyzer itself cannot be created with CSS alone. CSS controls its size/position; the actual bars need the JavaScript Web Audio API code I gave you previously.
+
+Add this to the bottom of your style.css:
+
+/* =========================
+   SONG TITLE + SPECTRUM
+   ========================= */
+
+.song-title-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+
+/* Song title */
+
+.song-title-row span {
+  flex: 1;
+
+  min-width: 0;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Audio spectrum */
+
+#spectrum {
+  flex-shrink: 0;
+
+  width: 80px;
+  height: 28px;
+
+  display: block;
+}
+
+Then your HTML should have this structure:
+
+<div class="music-info">
+
+  <div class="song-title-row">
+
+    <span id="songTitle">
+      No song selected
+    </span>
+
+    <canvas id="spectrum"></canvas>
+
+  </div>
+
+  <small>
+    Music Player
+  </small>
+
+  ...
+  
+</div>
+
+So the result will look roughly like:
+
+┌──────────────────────────────────────┐
+│ ▶  My Song.mp3       ▂▅▇▃▆▇▂▃       │
+│    Music Player                      │
+│    ───────────────────────────────   │
+│    0:12                    3:42       │
+└──────────────────────────────────────┘
+
+When the song is playing, the canvas bars will move according to the actual audio frequencies.
+
+Your existing CSS doesn't need to be rewritten. Just append the spectrum CSS above, add the <canvas> to the HTML, and use the Web Audio JavaScript from the previous step.
+
 <!-- =====================
      LEFT MUSIC LIBRARY
      ===================== -->
@@ -6,9 +1142,7 @@
 <aside class="music-library">
 
   <h3 class="library-title">My Music</h3>
-   
 
-   
   <div class="song-list" id="songList">
     <!-- Songs will appear here -->
   </div>
@@ -25,17 +1159,13 @@
   <button id="playButton" class="play-button">
     ▶
   </button>
-   
 
-   
 <span id="songTitle">
   No song selected
 </span>
 
 <canvas id="spectrum"></canvas>
-   
 
-   
 <input
   id="volume"
   type="range"
@@ -44,9 +1174,7 @@
   step="0.01"
   value="0.7"
 >
-   
 
-   
 <span id="currentTime">
   0:00
 </span>
@@ -63,8 +1191,328 @@
 <span id="duration">
   0:00
 </span>
-   
 
-   
 </main>
-   
+
+
+Yes — with that HTML structure, the main thing I would change is to wrap the title and spectrum together. Otherwise the spectrum may not stay aligned nicely with the song title.
+
+Use this exact structure for the right-side player:
+
+<!-- =====================
+     RIGHT PLAYER
+     ===================== -->
+
+<main class="player">
+
+  <button id="playButton" class="play-button">
+    ▶
+  </button>
+
+  <div class="music-info">
+
+    <!-- Song title + spectrum -->
+    <div class="song-title-row">
+
+      <span id="songTitle">
+        No song selected
+      </span>
+
+      <canvas id="spectrum"></canvas>
+
+    </div>
+
+
+    <small>
+      Music Player
+    </small>
+
+
+    <!-- Volume -->
+    <div class="volume">
+
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.7"
+      >
+
+    </div>
+
+
+    <!-- Progress -->
+    <div class="progress-container">
+
+      <span id="currentTime">
+        0:00
+      </span>
+
+      <input
+        id="progress"
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        step="0.1"
+      >
+
+      <span id="duration">
+        0:00
+      </span>
+
+    </div>
+
+  </div>
+
+</main>
+
+And add this to your CSS:
+
+/* =========================
+   SONG TITLE + SPECTRUM
+   ========================= */
+
+.song-title-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+
+/* Song title */
+
+.song-title-row span {
+  flex: 1;
+
+  min-width: 0;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Spectrum */
+
+#spectrum {
+  flex-shrink: 0;
+
+  width: 80px;
+  height: 28px;
+
+  display: block;
+}
+
+One important correction
+
+Your spectrum will not animate just from adding <canvas>. The canvas is only the drawing surface.
+
+You also need this in your JavaScript:
+
+const spectrum = document.getElementById("spectrum");
+
+const audioContext =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+const analyser =
+  audioContext.createAnalyser();
+
+analyser.fftSize = 128;
+analyser.smoothingTimeConstant = 0.75;
+
+const source =
+  audioContext.createMediaElementSource(audio);
+
+source.connect(analyser);
+analyser.connect(audioContext.destination);
+
+const ctx = spectrum.getContext("2d");
+
+const data =
+  new Uint8Array(analyser.frequencyBinCount);
+
+
+function drawSpectrum() {
+
+  requestAnimationFrame(drawSpectrum);
+
+  ctx.clearRect(
+    0,
+    0,
+    spectrum.width,
+    spectrum.height
+  );
+
+  if (audio.paused || audio.ended) {
+    return;
+  }
+
+  analyser.getByteFrequencyData(data);
+
+  const bars = 16;
+  const gap = 3;
+
+  const barWidth =
+    (spectrum.width - gap * (bars - 1)) / bars;
+
+
+  for (let i = 0; i < bars; i++) {
+
+    const index =
+      Math.floor(
+        i * data.length / bars
+      );
+
+    const value = data[index];
+
+    const barHeight =
+      Math.max(
+        2,
+        (value / 255) * spectrum.height
+      );
+
+    const x =
+      i * (barWidth + gap);
+
+    const y =
+      spectrum.height - barHeight;
+
+    ctx.fillStyle = "#D1CCDC";
+
+    ctx.fillRect(
+      x,
+      y,
+      barWidth,
+      barHeight
+    );
+  }
+}
+
+drawSpectrum();
+
+And in your play code, make sure you have:
+
+if (audioContext.state === "suspended") {
+  await audioContext.resume();
+}
+
+This gives you:
+
+▶   My Song.mp3             ▂▅▇▃▆▇▂▃
+    Music Player
+    ───────────────────────────────
+    0:24                     3:45
+
+The bars will respond to the actual MP3 audio, rather than being a fake looping animation.
+
+
+<!DOCTYPE html>
+
+<html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Music Player</title>
+
+<style> * { box-sizing: border-box; } html, body { width: 100%; height: 100%; margin: 0; } body { display: flex; justify-content: center; align-items: center; background: #D1CCDC; font-family: Arial, sans-serif; } /* Main player */ .music-box { width: 600px; min-height: 320px; display: flex; background: #2E3641; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 20px rgba(46, 54, 65, 0.25); } /* ========================= LEFT MUSIC LIBRARY ========================= */ .music-library { width: 220px; padding: 16px; background: #171D27; color: #D1CCDC; display: flex; flex-direction: column; } .library-title { margin: 0 0 10px 0; font-size: 15px; font-weight: 600; } /* Search bar */ .search-container { margin-bottom: 10px; } #searchInput { width: 100%; padding: 7px 10px; border: 1px solid #2E3641; border-radius: 8px; background: #2E3641; color: #D1CCDC; font-size: 12px; outline: none; } #searchInput::placeholder { color: #D1CCDC; opacity: 0.6; } #searchInput:focus { border-color: #D1CCDC; } /* Add MP3 button */ .add-button { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #D1CCDC; color: #171D27; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease; } .add-button:hover { transform: scale(1.03); } /* Song list */ .song-list { margin-top: 15px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; } .song { width: 100%; padding: 9px; border-radius: 7px; color: #D1CCDC; font-size: 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.2s ease; } .song:hover { background: #2E3641; } .song.active { background: #2E3641; } /* ========================= RIGHT PLAYER ========================= */ .player { flex: 1; padding: 20px; display: flex; align-items: center; gap: 14px; } /* Play button */ .play-button { flex-shrink: 0; width: 48px; height: 48px; border: none; border-radius: 50%; background: #D1CCDC; color: #2E3641; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease; } .play-button:hover { transform: scale(1.08); } /* Music information */ .music-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; color: #D1CCDC; } .music-info span { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .music-info small { font-size: 11px; opacity: 0.7; } /* Volume */ .volume { width: 100%; display: flex; align-items: center; margin-top: 5px; } #volume { width: 100%; height: 4px; appearance: none; -webkit-appearance: none; background: #D1CCDC; border-radius: 10px; cursor: pointer; } /* Volume slider */ #volume::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 11px; height: 11px; background: #D1CCDC; border: 2px solid #2E3641; border-radius: 50%; cursor: pointer; } #volume::-moz-range-thumb { width: 11px; height: 11px; background: #D1CCDC; border: 2px solid #2E3641; border-radius: 50%; cursor: pointer; } /* Hidden file input */ #fileInput { display: none; } /* ========================= MOBILE ========================= */ @media (max-width: 650px) { .music-box { width: 95%; } .music-library { width: 170px; } } @media (max-width: 480px) { .music-box { flex-direction: column; } .music-library { width: 100%; } .player { width: 100%; } } </style>
+
+</head>
+
+<body>
+
+<div class="music-box">
+
+<!-- =====================
+     LEFT MUSIC LIBRARY
+     ===================== -->
+
+<aside class="music-library">
+
+  <h3 class="library-title">My Music</h3>
+
+<div class="search-container"> <input type="search" id="searchInput" placeholder="Search music..." autocomplete="off" > </div>
+
+<button class="add-button" id="addButton"> + Add MP3 </button> <input type="file" id="fileInput" accept="audio/mpeg,.mp3" multiple >
+
+  <div class="song-list" id="songList">
+    <!-- Songs will appear here -->
+  </div>
+
+</aside>
+
+
+<!-- =====================
+     RIGHT PLAYER
+     ===================== -->
+
+<main class="player">
+
+  <button id="playButton" class="play-button">
+    ▶
+  </button>
+
+  <div class="music-info">
+
+    <span id="songTitle">
+      No song selected
+    </span>
+
+    <small>
+      Music Player
+    </small>
+
+<div class="volume">
+
+<input
+id="volume"
+type="range"
+min="0"
+max="1"
+step="0.01"
+value="0.7"
+
+
+</div>
+
+<!-- Music progress / seek bar -->
+
+<div class="progress-container">
+
+<span id="currentTime">0:00</span>
+
+<input
+id="progress"
+type="range"
+min="0"
+max="100"
+value="0"
+step="0.1"
+
+
+<span id="duration">0:00</span>
+
+</div>
+
+  </div>
+
+</main>
+
+</div>
+
+
+<!-- Audio element -->
+
+<audio id="audio"></audio>
+
+<script> const button = document.getElementById("playButton"); const audio = document.getElementById("audio"); const volume = document.getElementById("volume"); const addButton = document.getElementById("addButton"); const fileInput = document.getElementById("fileInput"); const songList = document.getElementById("songList"); const songTitle = document.getElementById("songTitle"); const searchInput = document.getElementById("searchInput"); const progress = document.getElementById("progress"); const currentTime = document.getElementById("currentTime"); const duration = document.getElementById("duration"); /* ========================= VARIABLES ========================= */ let songs = []; let currentSong = null; /* ========================= PLAY / PAUSE ========================= */ button.addEventListener("click", async () => { if (!currentSong) { return; } if (audio.paused) { try { await audio.play(); button.textContent = "❚❚"; } catch (error) { console.error("Could not play audio:", error); } } else { audio.pause(); button.textContent = "▶"; } }); /* ========================= MUSIC ENDED ========================= */ audio.addEventListener("ended", () => { button.textContent = "▶"; progress.value = 0; }); /* ========================= VOLUME ========================= */ volume.addEventListener("input", () => { audio.volume = volume.value; }); audio.volume = 0.7; /* ========================= ADD MP3 BUTTON ========================= */ addButton.addEventListener("click", () => { fileInput.click(); }); /* ========================= FILE SELECTED ========================= */ fileInput.addEventListener("change", (event) => { const files = Array.from(event.target.files); files.forEach(file => { if ( file.type !== "audio/mpeg" && !file.name.toLowerCase().endsWith(".mp3") ) { return; } songs.push(file); }); displaySongs(); /* Allow selecting the same file again */ fileInput.value = ""; }); /* ========================= DISPLAY SONGS ========================= */ function displaySongs() { songList.innerHTML = ""; const searchTerm = searchInput.value.trim().toLowerCase(); songs.forEach((song, index) => { if (searchTerm && !song.name.toLowerCase().includes(searchTerm)) { return; } const songElement = document.createElement("div"); songElement.classList.add("song"); if (song === currentSong) { songElement.classList.add("active"); } songElement.textContent = song.name; songElement.addEventListener("click", () => { selectSong(index); }); songList.appendChild(songElement); }); } /* ========================= SELECT SONG ========================= */ function selectSong(index) { const song = songs[index]; if (!song) { return; } currentSong = song; const url = URL.createObjectURL(song); audio.src = url; songTitle.textContent = song.name; button.textContent = "▶"; progress.value = 0; currentTime.textContent = "0:00"; duration.textContent = "0:00"; displaySongs(); audio.play() .then(() => { button.textContent = "❚❚"; }) .catch(error => { console.error("Could not play audio:", error); }); } /* ========================= UPDATE PROGRESS BAR ========================= */ audio.addEventListener("timeupdate", () => { if (!audio.duration) { return; } const percentage = (audio.currentTime / audio.duration) * 100; progress.value = percentage; currentTime.textContent = formatTime(audio.currentTime); }); /* ========================= LOAD SONG DURATION ========================= */ audio.addEventListener("loadedmetadata", () => { duration.textContent = formatTime(audio.duration); }); /* ========================= SEEK THROUGH SONG ========================= */ progress.addEventListener("input", () => { if (!audio.duration) { return; } const time = (progress.value / 100) * audio.duration; audio.currentTime = time; }); /* ========================= FORMAT TIME ========================= */ function formatTime(seconds) { if (isNaN(seconds)) { return "0:00"; } const minutes = Math.floor(seconds / 60); const remainingSeconds = Math.floor(seconds % 60); return ( minutes + ":" + remainingSeconds.toString().padStart(2, "0") ); } </script>
+
+</body> </html>
