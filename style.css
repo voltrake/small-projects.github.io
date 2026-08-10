@@ -221,3 +221,45 @@ body {
 
   cursor: pointer;
 }
+
+
+/* =========================
+   SONG TITLE + SPECTRUM
+   ========================= */
+
+.song-title-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.song-title-row span {
+  min-width: 0;
+
+  flex: 1;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Audio spectrum */
+
+#spectrum {
+  flex-shrink: 0;
+
+  width: 90px;
+  height: 28px;
+
+  display: block;
+}
+
