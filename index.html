@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<link rel="stylesheet" href="style.css">
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -366,39 +366,60 @@
     ▶
   </button>
 
-  <div class="music-info">
+ 
+<div class="music-info">
 
-    <span id="songTitle">
-      No song selected
-    </span>
+  <!-- Song title -->
+  <span id="songTitle">
+    No song selected
+  </span>
 
-    <small>
-      Music Player
-    </small>
-
-<div class="volume">
-
-<inputid="volume"type="range"min="0"max="1"step="0.01"value="0.7"
-
+  <!-- Player subtitle -->
+  <small>
+    Music Player
+  </small>
 
 
-</div>
+  <!-- Volume -->
+  <div class="volume">
 
-<!-- Music progress / seek bar -->
-
-<div class="progress-container">
-
-<span id="currentTime">0:00</span>
-
-<inputid="progress"type="range"min="0"max="100"value="0"step="0.1"
-
-
-
-<span id="duration">0:00</span>
-
-</div>
+    <input
+      id="volume"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value="0.7"
+    >
 
   </div>
+
+
+  <!-- Progress bar -->
+  <div class="progress-container">
+
+    <span id="currentTime">
+      0:00
+    </span>
+
+    <input
+      id="progress"
+      type="range"
+      min="0"
+      max="100"
+      value="0"
+      step="0.1"
+    >
+
+    <span id="duration">
+      0:00
+    </span>
+
+  </div>
+
+</div>
+
+
 
 </main>
 
