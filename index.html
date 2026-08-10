@@ -157,19 +157,77 @@
     }
 
 
-    /* =========================
-       RIGHT PLAYER
-       ========================= */
 
-    .player {
-      flex: 1;
+<!-- =====================
+     RIGHT PLAYER
+     ===================== -->
 
-      padding: 20px;
+<main class="player">
 
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+  <button id="playButton" class="play-button">
+    ▶
+  </button>
+
+  <div class="music-info">
+
+    <!-- Song title + spectrum -->
+    <div class="song-title-row">
+
+      <span id="songTitle">
+        No song selected
+      </span>
+
+      <canvas id="spectrum"></canvas>
+
+    </div>
+
+
+    <small>
+      Music Player
+    </small>
+
+
+    <!-- Volume -->
+    <div class="volume">
+
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.7"
+      >
+
+    </div>
+
+
+    <!-- Progress -->
+    <div class="progress-container">
+
+      <span id="currentTime">
+        0:00
+      </span>
+
+      <input
+        id="progress"
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        step="0.1"
+      >
+
+      <span id="duration">
+        0:00
+      </span>
+
+    </div>
+
+  </div>
+
+</main>
+
 
     /* Play button */
     .play-button {
@@ -430,6 +488,88 @@
   <audio id="audio"></audio>
 
 <script>
+
+  const spectrum = document.getElementById("spectrum");
+
+const audioContext =
+  new (window.AudioContext || window.webkitAudioContext)();
+
+const analyser =
+  audioContext.createAnalyser();
+
+analyser.fftSize = 128;
+analyser.smoothingTimeConstant = 0.75;
+
+const source =
+  audioContext.createMediaElementSource(audio);
+
+source.connect(analyser);
+analyser.connect(audioContext.destination);
+
+const ctx = spectrum.getContext("2d");
+
+const data =
+  new Uint8Array(analyser.frequencyBinCount);
+
+
+function drawSpectrum() {
+
+  requestAnimationFrame(drawSpectrum);
+
+  ctx.clearRect(
+    0,
+    0,
+    spectrum.width,
+    spectrum.height
+  );
+
+  if (audio.paused || audio.ended) {
+    return;
+  }
+
+  analyser.getByteFrequencyData(data);
+
+  const bars = 16;
+  const gap = 3;
+
+  const barWidth =
+    (spectrum.width - gap * (bars - 1)) / bars;
+
+
+  for (let i = 0; i < bars; i++) {
+
+    const index =
+      Math.floor(
+        i * data.length / bars
+      );
+
+    const value = data[index];
+
+    const barHeight =
+      Math.max(
+        2,
+        (value / 255) * spectrum.height
+      );
+
+    const x =
+      i * (barWidth + gap);
+
+    const y =
+      spectrum.height - barHeight;
+
+    ctx.fillStyle = "#D1CCDC";
+
+    ctx.fillRect(
+      x,
+      y,
+      barWidth,
+      barHeight
+    );
+  }
+}
+
+drawSpectrum();
+  
   const button = document.getElementById("playButton");
   const audio = document.getElementById("audio");
   const volume = document.getElementById("volume");
