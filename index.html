@@ -551,7 +551,7 @@
      DISPLAY SONGS
      ========================= */
 
-  function displaySongs() {
+ function displaySongs() {
   songList.innerHTML = "";
 
   const searchTerm = searchInput.value.trim().toLowerCase();
@@ -564,36 +564,21 @@
 
     const songElement = document.createElement("div");
 
-    songList.innerHTML = "";
+    songElement.classList.add("song");
 
-    songs.forEach((song, index) => {
+    if (song === currentSong) {
+      songElement.classList.add("active");
+    }
 
-      const songElement = document.createElement("div");
+    songElement.textContent = song.name;
 
-      songElement.classList.add("song");
-
-      if (song === currentSong) {
-        songElement.classList.add("active");
-      }
-
-      songElement.textContent = song.name;
-
-      songElement.addEventListener("click", () => {
-
-        selectSong(index);
-
-      });
-
-      songList.appendChild(songElement);
-
+    songElement.addEventListener("click", () => {
+      selectSong(index);
     });
 
-  }
-
-                searchInput.addEventListener("input", () => {
-  displaySongs();
-});
-
+    songList.appendChild(songElement);
+  });
+}
   /* =========================
      SELECT SONG
      ========================= */
