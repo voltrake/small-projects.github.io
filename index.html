@@ -458,6 +458,56 @@
 
 
   /* =========================
+   INDEXED DB
+   ========================= */
+
+let db;
+
+const request = indexedDB.open("MusicPlayerDB", 1);
+
+request.onupgradeneeded = (event) => {
+    db = event.target.result;
+
+    if (!db.objectStoreNames.contains("songs")) {
+        db.createObjectStore("songs", {
+            keyPath: "id",
+            autoIncrement: true
+        });
+    }
+};
+
+request.onsuccess = () => {
+    db = request.result;
+    loadSongsFromDB();
+};
+
+request.onerror = () => {
+    console.error("Database error");
+};
+
+function saveSongToDB(file) {
+    const transaction = db.transaction(["songs"], "readwrite");
+    const store = transaction.objectStore("songs");
+
+    store.add({
+        name: file.name,
+        file: file
+    });
+}
+
+function loadSongsFromDB() {
+    const transaction = db.transaction(["songs"], "readonly");
+    const store = transaction.objectStore("songs");
+
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+        songs = request.result.map(item => item.file);
+        displaySongs();
+    };
+}
+
+  /* =========================
      PLAY / PAUSE
      ========================= */
 
@@ -546,6 +596,7 @@
       }
 
       songs.push(file);
+saveSongToDB(file);
 
     });
 
