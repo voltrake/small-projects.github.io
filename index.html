@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="style.css">
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <link rel="stylesheet" href="style.css">
+
   <title>Music Player</title>
+
+
 
   <style>
     * {
@@ -437,43 +442,19 @@
 <audio id="audio"></audio>
 
 <script>
+  <script>
 
-  const addButton = document.getElementById("addButton");
-const fileInput = document.getElementById("fileInput");
+  /* =========================
+     ELEMENTS
+     ========================= */
 
-  addButton.addEventListener("click", () => {
-  fileInput.click();
-});
-
-  fileInput.addEventListener("change", (event) => {
-
-  const files = Array.from(event.target.files);
-
-  files.forEach(file => {
-
-    if (
-      file.type !== "audio/mpeg" &&
-      !file.name.toLowerCase().endsWith(".mp3")
-    ) {
-      return;
-    }
-
-    console.log("MP3 selected:", file.name);
-
-    // Your code that adds the song goes here
-
-  });
-
-  // Allows selecting the same file again later
-  fileInput.value = "";
-});
-  
   const button = document.getElementById("playButton");
   const audio = document.getElementById("audio");
-  const volume = document.getElementById("volume");
 
   const addButton = document.getElementById("addButton");
   const fileInput = document.getElementById("fileInput");
+
+  const volume = document.getElementById("volume");
 
   const songList = document.getElementById("songList");
   const songTitle = document.getElementById("songTitle");
@@ -483,14 +464,19 @@ const fileInput = document.getElementById("fileInput");
   const currentTime = document.getElementById("currentTime");
   const duration = document.getElementById("duration");
 
-  const menu = document.getElementById("songContextMenu");
-const favoriteBtn = document.getElementById("favoriteSong");
-const shareBtn = document.getElementById("shareSong");
-const deleteBtn = document.getElementById("deleteSong");
+  /* Song action menu */
 
-let currentSongId = null;
-let currentObjectUrl = null;
-let menuSongId = null;
+  const menu =
+    document.getElementById("songContextMenu");
+
+  const favoriteBtn =
+    document.getElementById("favoriteSong");
+
+  const shareBtn =
+    document.getElementById("shareSong");
+
+  const deleteBtn =
+    document.getElementById("deleteSong");
 
 
   /* =========================
@@ -498,123 +484,301 @@ let menuSongId = null;
      ========================= */
 
   let songs = [];
+
   let currentSong = null;
+
+  let currentSongId = null;
+
+  let currentObjectUrl = null;
+
+  let menuSongId = null;
+
+  let db = null;
 
 
   /* =========================
-   INDEXED DB
-   ========================= */
+     INDEXED DB
+     ========================= */
 
-let db;
+  const dbReady = new Promise((resolve, reject) => {
 
-const request = indexedDB.open("MusicPlayerDB", 2);
+    const request =
+      indexedDB.open("MusicPlayerDB", 2);
 
-request.onupgradeneeded = (event) => {
-    db = event.target.result;
 
-    if (!db.objectStoreNames.contains("songs")) {
+    /* DATABASE UPGRADE */
+
+    request.onupgradeneeded = (event) => {
+
+      db = event.target.result;
+
+
+      /* Songs */
+
+      if (
+        !db.objectStoreNames.contains("songs")
+      ) {
+
         db.createObjectStore("songs", {
-            keyPath: "id",
-            autoIncrement: true
+          keyPath: "id",
+          autoIncrement: true
         });
-    }
 
-  if (!db.objectStoreNames.contains("favorites")) {
+      }
 
-  db.createObjectStore("favorites", {
-    keyPath: "songId"
+
+      /* Favorites */
+
+      if (
+        !db.objectStoreNames.contains("favorites")
+      ) {
+
+        db.createObjectStore("favorites", {
+          keyPath: "songId"
+        });
+
+      }
+
+    };
+
+
+    /* DATABASE READY */
+
+    request.onsuccess = async () => {
+
+      db = request.result;
+
+      try {
+
+        await loadSongsFromDB();
+
+        resolve();
+
+      } catch (error) {
+
+        console.error(
+          "Could not load songs:",
+          error
+        );
+
+        resolve();
+
+      }
+
+    };
+
+
+    /* DATABASE ERROR */
+
+    request.onerror = () => {
+
+      console.error(
+        "Database error:",
+        request.error
+      );
+
+      reject(request.error);
+
+    };
+
   });
 
-}
-};
 
-request.onsuccess = () => {
-    db = request.result;
-    loadSongsFromDB();
-};
+  /* =========================
+     SAVE SONG
+     ========================= */
 
-request.onerror = () => {
-    console.error("Database error");
-};
+  function saveSongToDB(file) {
 
-function saveSongToDB(file) {
-    const transaction = db.transaction(["songs"], "readwrite");
-    const store = transaction.objectStore("songs");
+    return new Promise((resolve, reject) => {
 
-    store.add({
+      const transaction =
+        db.transaction(
+          ["songs"],
+          "readwrite"
+        );
+
+      const store =
+        transaction.objectStore("songs");
+
+
+      const request = store.add({
+
         name: file.name,
-        file: file
+
+        type:
+          file.type || "audio/mpeg",
+
+        file: file,
+
+        addedAt: Date.now()
+
+      });
+
+
+      request.onsuccess = () => {
+
+        resolve(request.result);
+
+      };
+
+
+      request.onerror = () => {
+
+        reject(request.error);
+
+      };
+
     });
-}
 
-function loadSongsFromDB() {
-    const transaction = db.transaction(["songs"], "readonly");
-    const store = transaction.objectStore("songs");
+  }
 
-    const request = store.getAll();
 
-    request.onsuccess = () => {
-        songs = request.result.map(item => item.file);
+  /* =========================
+     LOAD SONGS
+     ========================= */
+
+  async function loadSongsFromDB() {
+
+    const transaction =
+      db.transaction(
+        ["songs", "favorites"],
+        "readonly"
+      );
+
+
+    const songRequest =
+      transaction
+        .objectStore("songs")
+        .getAll();
+
+
+    const favoriteRequest =
+      transaction
+        .objectStore("favorites")
+        .getAllKeys();
+
+
+    return new Promise((resolve, reject) => {
+
+      transaction.oncomplete = () => {
+
+        const favoriteIds =
+          new Set(
+            favoriteRequest.result
+          );
+
+
+        songs =
+          songRequest.result.map(song => ({
+
+            id: song.id,
+
+            name: song.name,
+
+            type:
+              song.type || "audio/mpeg",
+
+            file: song.file,
+
+            favorite:
+              favoriteIds.has(song.id)
+
+          }));
+
+
         displaySongs();
-    };
-}
+
+        resolve();
+
+      };
+
+
+      transaction.onerror = () => {
+
+        reject(transaction.error);
+
+      };
+
+    });
+
+  }
+
 
   /* =========================
      PLAY / PAUSE
      ========================= */
 
-  button.addEventListener("click", async () => {
+  button.addEventListener(
+    "click",
+    async () => {
 
-    if (!currentSong) {
-      return;
-    }
+      if (!currentSong) {
 
-    if (audio.paused) {
-
-      try {
-
-        await audio.play();
-
-        button.textContent = "❚❚";
-
-      } catch (error) {
-
-        console.error("Could not play audio:", error);
+        return;
 
       }
 
-    } else {
 
-      audio.pause();
+      if (audio.paused) {
 
-      button.textContent = "▶";
+        try {
+
+          await audio.play();
+
+          button.textContent = "❚❚";
+
+        } catch (error) {
+
+          console.error(
+            "Could not play audio:",
+            error
+          );
+
+        }
+
+      } else {
+
+        audio.pause();
+
+        button.textContent = "▶";
+
+      }
 
     }
-
-  });
+  );
 
 
   /* =========================
      MUSIC ENDED
      ========================= */
 
-  audio.addEventListener("ended", () => {
+  audio.addEventListener(
+    "ended",
+    () => {
 
-    button.textContent = "▶";
-    progress.value = 0;
+      button.textContent = "▶";
 
-  });
+      progress.value = 0;
+
+    }
+  );
 
 
   /* =========================
      VOLUME
      ========================= */
 
-  volume.addEventListener("input", () => {
+  volume.addEventListener(
+    "input",
+    () => {
 
-    audio.volume = volume.value;
+      audio.volume =
+        Number(volume.value);
 
-  });
+    }
+  );
+
 
   audio.volume = 0.7;
 
@@ -623,349 +787,297 @@ function loadSongsFromDB() {
      ADD MP3 BUTTON
      ========================= */
 
-  addButton.addEventListener("click", () => {
+  addButton.addEventListener(
+    "click",
+    async () => {
 
-    fileInput.click();
+      await dbReady;
 
-  });
+      fileInput.click();
+
+    }
+  );
 
 
   /* =========================
      FILE SELECTED
      ========================= */
-fileInput.addEventListener("change", async (event) => {
 
-    const files = Array.from(event.target.files);
+  fileInput.addEventListener(
+    "change",
+    async (event) => {
 
-    files.forEach(file => {
+      await dbReady;
 
-      if (
-        file.type !== "audio/mpeg" &&
-        !file.name.toLowerCase().endsWith(".mp3")
-      ) {
-        return;
+
+      const files =
+        Array.from(
+          event.target.files
+        );
+
+
+      for (const file of files) {
+
+
+        /* Only MP3 */
+
+        if (
+          file.type !== "audio/mpeg" &&
+          !file.name
+            .toLowerCase()
+            .endsWith(".mp3")
+        ) {
+
+          continue;
+
+        }
+
+
+        try {
+
+          /* Save permanently */
+
+          const id =
+            await saveSongToDB(file);
+
+
+          /* Add to memory */
+
+          songs.push({
+
+            id: id,
+
+            name: file.name,
+
+            type:
+              file.type || "audio/mpeg",
+
+            file: file,
+
+            favorite: false
+
+          });
+
+
+        } catch (error) {
+
+          console.error(
+            "Could not save song:",
+            error
+          );
+
+        }
+
       }
 
-      const id = await saveSongToDB(file);
 
-songs.push({
-  id: id,
-  name: file.name,
-  type: file.type || "audio/mpeg",
-  file: file,
-  favorite: false
-});
+      /* Refresh list */
 
-      
-saveSongToDB(file);
-
-    });
-
-    displaySongs();
-
-    function showSongMenu(songId, x, y) {
-
-  const song =
-    songs.find(item => item.id === songId);
-
-  if (!song) return;
-
-  menuSongId = songId;
-
-  favoriteBtn.textContent =
-    song.favorite
-      ? "★ Remove from Favorites"
-      : "☆ Add to Favorites";
-
-  menu.style.display = "block";
-
-  const width = 175;
-  const height = 125;
-
-  menu.style.left =
-    Math.max(
-      8,
-      Math.min(
-        x,
-        window.innerWidth - width - 8
-      )
-    ) + "px";
-
-  menu.style.top =
-    Math.max(
-      8,
-      Math.min(
-        y,
-        window.innerHeight - height - 8
-      )
-    ) + "px";
-}
+      displaySongs();
 
 
-function hideSongMenu() {
+      /* Allow selecting same file again */
 
-  menu.style.display = "none";
-
-  menuSongId = null;
-
-}
-
-    /* favorites */
-
-    favoriteBtn.addEventListener("click", () => {
-
-  const song =
-    songs.find(item => item.id === menuSongId);
-
-  if (!song) {
-    hideSongMenu();
-    return;
-  }
-
-  song.favorite = !song.favorite;
-
-  const transaction =
-    db.transaction("favorites", "readwrite");
-
-  const store =
-    transaction.objectStore("favorites");
-
-  if (song.favorite) {
-
-    store.put({
-      songId: song.id
-    });
-
-  } else {
-
-    store.delete(song.id);
-
-  }
-
-  transaction.oncomplete = () => {
-
-    displaySongs();
-
-    hideSongMenu();
-
-  };
-
-});
-
-    /* DELETE */
-
-    deleteBtn.addEventListener("click", () => {
-
-  const song =
-    songs.find(item => item.id === menuSongId);
-
-  if (!song) {
-    hideSongMenu();
-    return;
-  }
-
-  if (
-    !confirm(
-      `Delete "${song.name}" from your music library?`
-    )
-  ) {
-    hideSongMenu();
-    return;
-  }
-
-  const transaction =
-    db.transaction(
-      ["songs", "favorites"],
-      "readwrite"
-    );
-
-  transaction
-    .objectStore("songs")
-    .delete(song.id);
-
-  transaction
-    .objectStore("favorites")
-    .delete(song.id);
-
-  transaction.oncomplete = () => {
-
-    songs =
-      songs.filter(
-        item => item.id !== song.id
-      );
-
-    displaySongs();
-
-    hideSongMenu();
-
-  };
-
-});
-
-    /* SHARE */
-    shareBtn.addEventListener("click", async () => {
-
-  const song =
-    songs.find(item => item.id === menuSongId);
-
-  if (!song) {
-    hideSongMenu();
-    return;
-  }
-
-  try {
-
-    const shareFile =
-      new File(
-        [song.file],
-        song.name,
-        {
-          type:
-            song.type || "audio/mpeg"
-        }
-      );
-
-    if (
-      navigator.share &&
-      navigator.canShare &&
-      navigator.canShare({
-        files: [shareFile]
-      })
-    ) {
-
-      await navigator.share({
-
-        title: song.name,
-
-        text: "Music",
-
-        files: [shareFile]
-
-      });
-
-    } else {
-
-      alert(
-        "File sharing is not supported by this browser."
-      );
+      fileInput.value = "";
 
     }
+  );
 
-  } catch (error) {
 
-    if (error.name !== "AbortError") {
+  /* =========================
+     SEARCH
+     ========================= */
 
-      console.error(
-        "Could not share song:",
-        error
-      );
-
-    }
-
-  }
-
-  hideSongMenu();
-
-});
-
-    /* Allow selecting the same file again */
-    fileInput.value = "";
-
-  });
+  searchInput.addEventListener(
+    "input",
+    displaySongs
+  );
 
 
   /* =========================
      DISPLAY SONGS
      ========================= */
 
- function displaySongs() {
-  songList.innerHTML = "";
+  function displaySongs() {
 
-  const searchTerm =
-    searchInput.value.trim().toLowerCase();
+    songList.innerHTML = "";
 
-  songs.forEach((song, index) => {
 
-    if (
-      searchTerm &&
-      !song.name.toLowerCase().includes(searchTerm)
-    ) {
-      return;
-    }
+    const searchTerm =
+      searchInput.value
+        .trim()
+        .toLowerCase();
 
-    const songElement =
-      document.createElement("div");
 
-    songElement.classList.add("song");
+    songs.forEach(
+      (song, index) => {
 
-    if (song.id === currentSongId) {
-      songElement.classList.add("active");
-    }
 
-    songElement.textContent =
-      (song.favorite ? "★ " : "") +
-      song.name;
+        /* Search filter */
 
-    songElement.addEventListener("click", () => {
+        if (
+          searchTerm &&
+          !song.name
+            .toLowerCase()
+            .includes(searchTerm)
+        ) {
 
-      selectSong(index);
+          return;
 
-      showSongMenu(
-        song.id,
-        songElement.getBoundingClientRect().left,
-        songElement.getBoundingClientRect().bottom + 4
-      );
+        }
 
-    });
 
-    songList.appendChild(songElement);
+        const songElement =
+          document.createElement("div");
 
-  });
-}
+
+        songElement.classList.add(
+          "song"
+        );
+
+
+        /* Active song */
+
+        if (
+          song.id === currentSongId
+        ) {
+
+          songElement.classList.add(
+            "active"
+          );
+
+        }
+
+
+        /* Favorite star */
+
+        songElement.textContent =
+          (song.favorite
+            ? "★ "
+            : "") +
+          song.name;
+
+
+        /* LEFT CLICK */
+
+        songElement.addEventListener(
+          "click",
+          () => {
+
+            selectSong(index);
+
+
+            showSongMenu(
+
+              song.id,
+
+              songElement
+                .getBoundingClientRect()
+                .left,
+
+              songElement
+                .getBoundingClientRect()
+                .bottom + 4
+
+            );
+
+          }
+        );
+
+
+        songList.appendChild(
+          songElement
+        );
+
+      }
+    );
+
+  }
+
+
   /* =========================
      SELECT SONG
      ========================= */
 
   function selectSong(index) {
 
-    const song = songs[index];
+    const song =
+      songs[index];
+
 
     if (!song) {
+
       return;
+
     }
 
-    currentSong = song;
-    currentSongId = song.id;
+
+    currentSong =
+      song.file;
+
+
+    currentSongId =
+      song.id;
+
+
+    /* Remove old URL */
 
     if (currentObjectUrl) {
-  URL.revokeObjectURL(currentObjectUrl);
-}
 
-currentObjectUrl =
-  URL.createObjectURL(song.file);
+      URL.revokeObjectURL(
+        currentObjectUrl
+      );
 
-   audio.src = currentObjectUrl;
+    }
 
-    songTitle.textContent = song.name;
 
-    button.textContent = "▶";
+    /* Create audio URL */
+
+    currentObjectUrl =
+      URL.createObjectURL(
+        song.file
+      );
+
+
+    audio.src =
+      currentObjectUrl;
+
+
+    songTitle.textContent =
+      song.name;
+
+
+    button.textContent =
+      "▶";
+
 
     progress.value = 0;
 
-    currentTime.textContent = "0:00";
-    duration.textContent = "0:00";
+    currentTime.textContent =
+      "0:00";
+
+    duration.textContent =
+      "0:00";
+
 
     displaySongs();
+
+
+    /* Start playing */
 
     audio.play()
       .then(() => {
 
-        button.textContent = "❚❚";
+        button.textContent =
+          "❚❚";
 
       })
       .catch(error => {
 
-        console.error("Could not play audio:", error);
+        console.error(
+          "Could not play audio:",
+          error
+        );
 
       });
 
@@ -973,54 +1085,513 @@ currentObjectUrl =
 
 
   /* =========================
-     UPDATE PROGRESS BAR
+     SONG MENU
      ========================= */
 
-  audio.addEventListener("timeupdate", () => {
+  function showSongMenu(
+    songId,
+    x,
+    y
+  ) {
 
-    if (!audio.duration) {
+    const song =
+      songs.find(
+        item =>
+          item.id === songId
+      );
+
+
+    if (!song) {
+
       return;
+
     }
 
-    const percentage =
-      (audio.currentTime / audio.duration) * 100;
 
-    progress.value = percentage;
+    menuSongId =
+      songId;
 
-    currentTime.textContent =
-      formatTime(audio.currentTime);
 
-  });
+    /* Favorite button text */
+
+    favoriteBtn.textContent =
+      song.favorite
+
+        ? "★ Remove from Favorites"
+
+        : "☆ Add to Favorites";
+
+
+    menu.style.display =
+      "block";
+
+
+    const width = 175;
+
+    const height = 125;
+
+
+    menu.style.left =
+      Math.max(
+        8,
+        Math.min(
+          x,
+          window.innerWidth -
+            width -
+            8
+        )
+      ) + "px";
+
+
+    menu.style.top =
+      Math.max(
+        8,
+        Math.min(
+          y,
+          window.innerHeight -
+            height -
+            8
+        )
+      ) + "px";
+
+  }
 
 
   /* =========================
-     LOAD SONG DURATION
+     HIDE MENU
      ========================= */
 
-  audio.addEventListener("loadedmetadata", () => {
+  function hideSongMenu() {
 
-    duration.textContent =
-      formatTime(audio.duration);
+    menu.style.display =
+      "none";
 
-  });
+    menuSongId = null;
+
+  }
 
 
   /* =========================
-     SEEK THROUGH SONG
+     FAVORITES
      ========================= */
 
-  progress.addEventListener("input", () => {
+  favoriteBtn.addEventListener(
+    "click",
+    () => {
 
-    if (!audio.duration) {
-      return;
+      const song =
+        songs.find(
+          item =>
+            item.id === menuSongId
+        );
+
+
+      if (!song) {
+
+        hideSongMenu();
+
+        return;
+
+      }
+
+
+      song.favorite =
+        !song.favorite;
+
+
+      const transaction =
+        db.transaction(
+          "favorites",
+          "readwrite"
+        );
+
+
+      const store =
+        transaction
+          .objectStore(
+            "favorites"
+          );
+
+
+      if (song.favorite) {
+
+        store.put({
+
+          songId: song.id
+
+        });
+
+      } else {
+
+        store.delete(
+          song.id
+        );
+
+      }
+
+
+      transaction.oncomplete =
+        () => {
+
+          displaySongs();
+
+          hideSongMenu();
+
+        };
+
     }
+  );
 
-    const time =
-      (progress.value / 100) * audio.duration;
 
-    audio.currentTime = time;
+  /* =========================
+     DELETE
+     ========================= */
 
-  });
+  deleteBtn.addEventListener(
+    "click",
+    () => {
+
+      const song =
+        songs.find(
+          item =>
+            item.id === menuSongId
+        );
+
+
+      if (!song) {
+
+        hideSongMenu();
+
+        return;
+
+      }
+
+
+      const confirmed =
+        confirm(
+          `Delete "${song.name}" from your music library?`
+        );
+
+
+      if (!confirmed) {
+
+        hideSongMenu();
+
+        return;
+
+      }
+
+
+      const transaction =
+        db.transaction(
+          [
+            "songs",
+            "favorites"
+          ],
+          "readwrite"
+        );
+
+
+      transaction
+        .objectStore("songs")
+        .delete(song.id);
+
+
+      transaction
+        .objectStore("favorites")
+        .delete(song.id);
+
+
+      transaction.oncomplete =
+        () => {
+
+
+          /* If currently playing */
+
+          if (
+            song.id ===
+            currentSongId
+          ) {
+
+            audio.pause();
+
+            audio.removeAttribute(
+              "src"
+            );
+
+            audio.load();
+
+
+            if (currentObjectUrl) {
+
+              URL.revokeObjectURL(
+                currentObjectUrl
+              );
+
+              currentObjectUrl =
+                null;
+
+            }
+
+
+            currentSong =
+              null;
+
+            currentSongId =
+              null;
+
+
+            songTitle.textContent =
+              "No song selected";
+
+
+            button.textContent =
+              "▶";
+
+
+            progress.value =
+              0;
+
+            currentTime.textContent =
+              "0:00";
+
+            duration.textContent =
+              "0:00";
+
+          }
+
+
+          /* Remove from array */
+
+          songs =
+            songs.filter(
+              item =>
+                item.id !== song.id
+            );
+
+
+          displaySongs();
+
+          hideSongMenu();
+
+        };
+
+    }
+  );
+
+
+  /* =========================
+     SHARE
+     ========================= */
+
+  shareBtn.addEventListener(
+    "click",
+    async () => {
+
+      const song =
+        songs.find(
+          item =>
+            item.id === menuSongId
+        );
+
+
+      if (!song) {
+
+        hideSongMenu();
+
+        return;
+
+      }
+
+
+      try {
+
+        const shareFile =
+          new File(
+
+            [song.file],
+
+            song.name,
+
+            {
+              type:
+                song.type ||
+                "audio/mpeg"
+            }
+
+          );
+
+
+        /* Share actual MP3 */
+
+        if (
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({
+            files: [shareFile]
+          })
+        ) {
+
+          await navigator.share({
+
+            title:
+              song.name,
+
+            text:
+              "Music",
+
+            files:
+              [shareFile]
+
+          });
+
+
+        } else {
+
+          alert(
+            "File sharing is not supported by this browser."
+          );
+
+        }
+
+
+      } catch (error) {
+
+
+        /* User cancelled share */
+
+        if (
+          error.name !==
+          "AbortError"
+        ) {
+
+          console.error(
+            "Could not share song:",
+            error
+          );
+
+        }
+
+      }
+
+
+      hideSongMenu();
+
+    }
+  );
+
+
+  /* =========================
+     CLOSE MENU
+     ========================= */
+
+  document.addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        menu.style.display ===
+        "block" &&
+
+        !menu.contains(
+          event.target
+        ) &&
+
+        !event.target.closest(
+          ".song"
+        )
+      ) {
+
+        hideSongMenu();
+
+      }
+
+    }
+  );
+
+
+  /* =========================
+     WINDOW RESIZE
+     ========================= */
+
+  window.addEventListener(
+    "resize",
+    hideSongMenu
+  );
+
+
+  /* =========================
+     PROGRESS
+     ========================= */
+
+  audio.addEventListener(
+    "timeupdate",
+    () => {
+
+      if (!audio.duration) {
+
+        return;
+
+      }
+
+
+      progress.value =
+        (
+          audio.currentTime /
+          audio.duration
+        ) * 100;
+
+
+      currentTime.textContent =
+        formatTime(
+          audio.currentTime
+        );
+
+    }
+  );
+
+
+  /* =========================
+     DURATION
+     ========================= */
+
+  audio.addEventListener(
+    "loadedmetadata",
+    () => {
+
+      duration.textContent =
+        formatTime(
+          audio.duration
+        );
+
+    }
+  );
+
+
+  /* =========================
+     SEEK
+     ========================= */
+
+  progress.addEventListener(
+    "input",
+    () => {
+
+      if (!audio.duration) {
+
+        return;
+
+      }
+
+
+      audio.currentTime =
+        (
+          progress.value /
+          100
+        ) *
+        audio.duration;
+
+    }
+  );
 
 
   /* =========================
@@ -1030,23 +1601,55 @@ currentObjectUrl =
   function formatTime(seconds) {
 
     if (isNaN(seconds)) {
+
       return "0:00";
+
     }
 
+
     const minutes =
-      Math.floor(seconds / 60);
+      Math.floor(
+        seconds / 60
+      );
+
 
     const remainingSeconds =
-      Math.floor(seconds % 60);
+      Math.floor(
+        seconds % 60
+      );
+
 
     return (
       minutes +
       ":" +
-      remainingSeconds.toString().padStart(2, "0")
+      remainingSeconds
+        .toString()
+        .padStart(2, "0")
     );
 
   }
 
+
+  /* =========================
+     CLEANUP
+     ========================= */
+
+  window.addEventListener(
+    "beforeunload",
+    () => {
+
+      if (currentObjectUrl) {
+
+        URL.revokeObjectURL(
+          currentObjectUrl
+        );
+
+      }
+
+    }
+  );
+
+</script>
 </script>
 
 </body>
