@@ -473,3 +473,35 @@ body {
 
 }
 
+/* Song action menu */
+.song-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 175px;
+  padding: 6px;
+  background: #171D27;
+  border: 1px solid #2E3641;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+.song-context-menu button {
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #D1CCDC;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.song-context-menu button:hover {
+  background: #2E3641;
+}
+
+.song-context-menu .delete-song:hover {
+  background: #4A2E35;
+}
