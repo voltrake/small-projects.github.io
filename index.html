@@ -339,15 +339,15 @@
   >
 </div>
 
-<button class="add-button" id="addButton">
+<button id="addButton" class="add-button">
   + Add MP3
 </button>
-      <input
-        type="file"
-        id="fileInput"
-        accept="audio/mpeg,.mp3"
-        multiple
-      >
+
+<input
+  type="file"
+  id="fileInput"
+  accept=".mp3,audio/mpeg"
+>
 
   <div class="song-list" id="songList">
     <!-- Songs will appear here -->
@@ -438,6 +438,36 @@
 
 <script>
 
+  const addButton = document.getElementById("addButton");
+const fileInput = document.getElementById("fileInput");
+
+  addButton.addEventListener("click", () => {
+  fileInput.click();
+});
+
+  fileInput.addEventListener("change", (event) => {
+
+  const files = Array.from(event.target.files);
+
+  files.forEach(file => {
+
+    if (
+      file.type !== "audio/mpeg" &&
+      !file.name.toLowerCase().endsWith(".mp3")
+    ) {
+      return;
+    }
+
+    console.log("MP3 selected:", file.name);
+
+    // Your code that adds the song goes here
+
+  });
+
+  // Allows selecting the same file again later
+  fileInput.value = "";
+});
+  
   const button = document.getElementById("playButton");
   const audio = document.getElementById("audio");
   const volume = document.getElementById("volume");
